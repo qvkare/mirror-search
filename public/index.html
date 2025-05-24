@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirror Search - Privacy-Preserving Search</title>
+    <meta name="description" content="Privacy-first search engine powered by Bless Network">
+    
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+    
+    <!-- Inline CSS -->
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --accent-color: #3b82f6;
+            --background-color: #ffffff;
+            --surface-color: #f8fafc;
+            --text-color: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #3b82f6;
+            --secondary-color: #2563eb;
+            --accent-color: #60a5fa;
+            --background-color: #111827;
+            --surface-color: #1f2937;
+            --text-color: #f9fafb;
+            --text-secondary: #d1d5db;
+            --border-color: #374151;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .search-section {
+            padding: 3rem 0;
+            text-align: center;
+        }
+
+        .search-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .search-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .search-form {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .search-input-container {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            font-size: 1.1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 50px;
+            background: var(--surface-color);
+            color: var(--text-color);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .engine-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 25px;
+            background: var(--surface-color);
+            color: var(--text-color);
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .search-button {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .search-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .results-section {
+            padding: 2rem 0;
+            display: none;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .results-info {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .result-item {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .result-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .result-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-title a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .result-title a:hover {
+            text-decoration: underline;
+        }
+
+        .result-url {
+            color: var(--accent-color);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+
+        .result-snippet {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .page-button {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            background: var(--surface-color);
+            color: var(--text-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .page-button:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .page-button.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: none;
+        }
+
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background: var(--surface-color);
+            border-left: 1px solid var(--border-color);
+            padding: 2rem;
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .settings-panel.open {
+            right: 0;
+        }
+
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .settings-overlay.show {
+            display: block;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .settings-button {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .search-title {
+                font-size: 2rem;
+            }
+            
+            .search-controls {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">
+                    🔍 Mirror Search
+                </a>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                        🌙
+                    </button>
+                    <button class="settings-button" onclick="toggleSettings()" title="Settings">
+                        ⚙️
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="search-section">
+            <h1 class="search-title">Privacy-First Search</h1>
+            <p class="search-subtitle">
+                Secure, anonymous search powered by Bless Network
+            </p>
+            
+            <form class="search-form" onsubmit="performSearch(event)">
+                <div class="search-input-container">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="search-input" 
+                        placeholder="Search the web privately..."
+                        autocomplete="off"
+                        required
+                    >
+                </div>
+                
+                <div class="search-controls">
+                    <select id="engineSelect" class="engine-select">
+                        <option value="google">Google</option>
+                        <option value="bing">Bing</option>
+                        <option value="duckduckgo">DuckDuckGo</option>
+                    </select>
+                    
+                    <button type="submit" class="search-button" id="searchButton">
+                        🔍 Search
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <section class="results-section" id="resultsSection">
+            <div class="results-header">
+                <div class="results-info" id="resultsInfo"></div>
+            </div>
+            
+            <div id="searchResults"></div>
+            
+            <div class="pagination" id="pagination"></div>
+        </section>
+    </main>
+
+    <!-- Settings Panel -->
+    <div class="settings-overlay" id="settingsOverlay" onclick="toggleSettings()"></div>
+    <div class="settings-panel" id="settingsPanel">
+        <h3>Settings</h3>
+        <div style="margin-top: 1rem;">
+            <label>
+                <input type="checkbox" id="fullPrivacyMode"> Full Privacy Mode
+            </label>
+        </div>
+        <div style="margin-top: 1rem;">
+            <label>
+                Language:
+                <select id="languageSelect">
+                    <option value="en">English</option>
+                    <option value="tr">Türkçe</option>
+                </select>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        // Mirror Search - Main Application
+        class MirrorSearch {
+            constructor() {
+                this.isSearching = false;
+                this.currentTheme = 'light';
+                this.currentPage = 1;
+                this.lastQuery = '';
+                this.settings = {
+                    searchEngine: 'google',
+                    language: 'en',
+                    theme: 'light',
+                    fullPrivacy: false
+                };
+                
+                this.init();
+            }
+
+            init() {
+                this.loadSettings();
+                this.bindEvents();
+                this.initTheme();
+                console.log('🔍 Mirror Search initialized with real search engines');
+            }
+
+            loadSettings() {
+                const saved = localStorage.getItem('mirrorSearchSettings');
+                if (saved) {
+                    this.settings = { ...this.settings, ...JSON.parse(saved) };
+                }
+                this.applySettings();
+            }
+
+            saveSettings() {
+                localStorage.setItem('mirrorSearchSettings', JSON.stringify(this.settings));
+            }
+
+            applySettings() {
+                document.getElementById('engineSelect').value = this.settings.searchEngine;
+                document.getElementById('languageSelect').value = this.settings.language;
+                document.getElementById('fullPrivacyMode').checked = this.settings.fullPrivacy;
+                this.currentTheme = this.settings.theme;
+                document.documentElement.setAttribute('data-theme', this.currentTheme);
+            }
+
+            bindEvents() {
+                // Settings changes
+                document.getElementById('engineSelect').addEventListener('change', (e) => {
+                    this.settings.searchEngine = e.target.value;
+                    this.saveSettings();
+                });
+
+                document.getElementById('languageSelect').addEventListener('change', (e) => {
+                    this.settings.language = e.target.value;
+                    this.saveSettings();
+                });
+
+                document.getElementById('fullPrivacyMode').addEventListener('change', (e) => {
+                    this.settings.fullPrivacy = e.target.checked;
+                    this.saveSettings();
+                });
+
+                // Search input
+                document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.performSearch();
+                    }
+                });
+            }
+
+            initTheme() {
+                const themeToggle = document.querySelector('.theme-toggle');
+                themeToggle.textContent = this.currentTheme === 'dark' ? '☀️' : '🌙';
+            }
+
+            async performSearch(query, engine = null, page = 1) {
+                if (this.isSearching) return;
+
+                this.isSearching = true;
+                const searchEngine = engine || this.settings.searchEngine;
+                this.currentPage = page;
+                
+                // Show loading
+                this.showLoading();
+                if (page === 1) {
+                    this.hideResults();
+                }
+                this.hideError();
+
+                try {
+                    console.log('🔍 Searching for: "' + query + '" via ' + searchEngine + ' (page ' + page + ')');
+                    console.log('📋 Request payload:', { q: query, engine: searchEngine, page: page });
+                    
+                    // Make search request
+                    const response = await fetch('/search', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            q: query,
+                            engine: searchEngine,
+                            page: page
+                        })
+                    });
+
+                    console.log('📡 Response status:', response.status);
+                    
+                    if (!response.ok) {
+                        throw new Error('Search request failed: ' + response.status);
+                    }
+
+                    const data = await response.json();
+                    console.log('📊 Search results received:', data);
+
+                    this.hideLoading();
+                    this.displayResults(data, query, searchEngine, page);
+                    this.lastQuery = query;
+
+                } catch (error) {
+                    console.error('❌ Search error:', error);
+                    this.hideLoading();
+                    this.showError('Search failed: ' + error.message);
+                } finally {
+                    this.isSearching = false;
+                }
+            }
+
+            showLoading() {
+                const button = document.getElementById('searchButton');
+                button.disabled = true;
+                button.innerHTML = '🔄 Searching...';
+            }
+
+            hideLoading() {
+                const button = document.getElementById('searchButton');
+                button.disabled = false;
+                button.innerHTML = '🔍 Search';
+            }
+
+            showError(message) {
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            }
+
+            hideError() {
+                document.getElementById('errorMessage').style.display = 'none';
+            }
+
+            hideResults() {
+                document.getElementById('resultsSection').style.display = 'none';
+            }
+
+            displayResults(data, query, engine, page) {
+                const resultsSection = document.getElementById('resultsSection');
+                const resultsInfo = document.getElementById('resultsInfo');
+                const searchResults = document.getElementById('searchResults');
+                const pagination = document.getElementById('pagination');
+
+                if (!data.results || data.results.length === 0) {
+                    searchResults.innerHTML = '<div class="no-results">No results found for "' + query + '"</div>';
+                    resultsSection.style.display = 'block';
+                    return;
+                }
+
+                // Update results info
+                resultsInfo.innerHTML = 'Found ' + data.results.length + ' results for "' + query + '" via ' + engine + ' (page ' + page + ')';
+
+                // Display results
+                searchResults.innerHTML = data.results.map(result => 
+                    '<div class="result-item">' +
+                        '<div class="result-title">' +
+                            '<a href="/out?url=' + encodeURIComponent(result.link) + '" target="_blank">' +
+                                result.title +
+                            '</a>' +
+                        '</div>' +
+                        '<div class="result-url">' + result.link + '</div>' +
+                        '<div class="result-snippet">' + result.snippet + '</div>' +
+                    '</div>'
+                ).join('');
+
+                // Update pagination
+                this.updatePagination(query, engine, page, data.hasNextPage);
+
+                resultsSection.style.display = 'block';
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            updatePagination(query, engine, currentPage, hasNextPage) {
+                const pagination = document.getElementById('pagination');
+                let paginationHTML = '';
+
+                // Previous page
+                if (currentPage > 1) {
+                    paginationHTML += '<button class="page-button" onclick="app.performSearch(\'' + query + '\', \'' + engine + '\', ' + (currentPage - 1) + ')">← Previous</button>';
+                }
+
+                // Current page
+                paginationHTML += '<button class="page-button active">' + currentPage + '</button>';
+
+                // Next page
+                if (hasNextPage) {
+                    paginationHTML += '<button class="page-button" onclick="app.performSearch(\'' + query + '\', \'' + engine + '\', ' + (currentPage + 1) + ')">Next →</button>';
+                }
+
+                pagination.innerHTML = paginationHTML;
+            }
+        }
+
+        // Global functions
+        function performSearch(event) {
+            if (event) {
+                event.preventDefault();
+            }
+            
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) {
+                alert('Please enter a search term');
+                return;
+            }
+
+            app.performSearch(query);
+        }
+
+        function toggleTheme() {
+            app.currentTheme = app.currentTheme === 'light' ? 'dark' : 'light';
+            app.settings.theme = app.currentTheme;
+            app.saveSettings();
+            
+            document.documentElement.setAttribute('data-theme', app.currentTheme);
+            
+            const themeToggle = document.querySelector('.theme-toggle');
+            themeToggle.textContent = app.currentTheme === 'dark' ? '☀️' : '🌙';
+        }
+
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            const overlay = document.getElementById('settingsOverlay');
+            
+            if (panel.classList.contains('open')) {
+                panel.classList.remove('open');
+                overlay.classList.remove('show');
+            } else {
+                panel.classList.add('open');
+                overlay.classList.add('show');
+            }
+        }
+
+        // Initialize app
+        const app = new MirrorSearch();
+
+        // Console welcome message
+        console.log('🔍 Mirror Search starting on Bless Network...');
+        console.log('🔒 Privacy-preserving search engine ready');
+        console.log('📡 Supported engines: Google, Bing, DuckDuckGo');
+        console.log('🛡️ Privacy features: Query anonymization, IP rotation, Cookie stripping');
+    </script>
+</body>
+</html> 

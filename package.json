@@ -1,0 +1,43 @@
+{
+	"name": "mirror-search",
+	"version": "1.0.0",
+	"description": "Privacy-preserving search engine using Bless Network edge nodes with local WASM LLM paraphrasing",
+	"main": "index.js",
+	"scripts": {
+		"clean": "rm -rf build",
+		"build:release": "mkdirp ./build && bls-sdk-ts build ./index.ts -o ./build -f release.wasm",
+		"build:debug": "mkdirp ./build && bls-sdk-ts build ./index.ts -o ./build -f debug.wasm",
+		"invoke": "bls-runtime ./build/debug.wasm",
+		"dev": "npm run build:debug && npm run invoke",
+		"test": "vitest",
+		"lint": "eslint . --ext .ts,.js",
+		"format": "prettier --write ."
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/your-username/mirror-search.git"
+	},
+	"keywords": ["privacy", "search", "bless-network", "wasm", "llm", "proxy"],
+	"author": "Mirror Search Team",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/blocklessnetwork/template-javy-typescript-hello-world/issues"
+	},
+	"homepage": "https://github.com/blocklessnetwork/template-javy-typescript-hello-world#readme",
+	"dependencies": {
+		"@blockless/sdk-ts": "^1.0.5",
+		"mkdirp": "^3.0.1",
+		"cheerio": "^1.0.0-rc.12",
+		"user-agents": "^1.1.0"
+	},
+	"devDependencies": {
+		"vitest": "^1.0.0",
+		"eslint": "^8.0.0",
+		"prettier": "^3.0.0",
+		"@types/node": "^20.0.0",
+		"@types/cheerio": "^0.22.31"
+	},
+	"bls": {
+		"functionId": "bless-function_mirror-search-1.0.0"
+	}
+}
