@@ -17,7 +17,14 @@
 		"type": "git",
 		"url": "git+https://github.com/your-username/mirror-search.git"
 	},
-	"keywords": ["privacy", "search", "bless-network", "wasm", "llm", "proxy"],
+	"keywords": [
+		"privacy",
+		"search",
+		"bless-network",
+		"wasm",
+		"llm",
+		"proxy"
+	],
 	"author": "Mirror Search Team",
 	"license": "MIT",
 	"bugs": {
@@ -26,16 +33,18 @@
 	"homepage": "https://github.com/blocklessnetwork/template-javy-typescript-hello-world#readme",
 	"dependencies": {
 		"@blockless/sdk-ts": "^1.0.5",
-		"mkdirp": "^3.0.1",
 		"cheerio": "^1.0.0-rc.12",
+		"mkdirp": "^3.0.1",
 		"user-agents": "^1.1.0"
 	},
 	"devDependencies": {
-		"vitest": "^1.0.0",
+		"@types/cheerio": "^0.22.31",
+		"@types/node": "^20.0.0",
+		"@typescript-eslint/eslint-plugin": "^8.32.1",
+		"@typescript-eslint/parser": "^8.32.1",
 		"eslint": "^8.0.0",
 		"prettier": "^3.0.0",
-		"@types/node": "^20.0.0",
-		"@types/cheerio": "^0.22.31"
+		"vitest": "^1.0.0"
 	},
 	"bls": {
 		"functionId": "bless-function_mirror-search-1.0.0"

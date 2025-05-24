@@ -2,7 +2,6 @@
 	"compilerOptions": {
 		"target": "es2019",
 		"module": "commonjs",
-		"rootDir": "./src",
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
@@ -13,6 +12,6 @@
 		"downlevelIteration": true,
 		"importHelpers": true
 	},
-	"include": ["src/**/*"],
+	"include": ["src/**/*", "index.ts"],
 	"exclude": ["node_modules", "dist"]
 }

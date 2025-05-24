@@ -1,5 +1,5 @@
 name = "mirror-search"
-version = "1.0.0"
+version = "2.0.0"
 type = "html"
 production_host = "coffee-cockroach-rachelle-6byahvr4.bls.dev"
 environment = "production"
@@ -9,7 +9,11 @@ permission = "public"
 nodes = 1
 permissions = [
   "https://api.duckduckgo.com/",
-  "https://reqres.in/"
+  "https://www.google.com/",
+  "https://www.bing.com/",
+  "https://search.yahoo.com/",
+  "https://fonts.googleapis.com/",
+  "https://fonts.gstatic.com/"
 ]
 
 [build]

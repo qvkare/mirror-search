@@ -1,429 +1,526 @@
-// Mirror Search - Main Application
+/**
+ * Mirror Search - Modern JavaScript Application
+ * Privacy-first web search powered by Bless Network
+ */
+
 class MirrorSearch {
     constructor() {
         this.isSearching = false;
-        this.currentTheme = 'light';
-        this.currentPage = 1;
-        this.lastQuery = '';
-        this.settings = {
-            searchEngine: 'google',
-            language: 'en',
-            theme: 'light',
-            fullPrivacy: false
+        this.currentQuery = '';
+        this.searchResults = [];
+        this.statusIndicators = {
+            privacy: '🔒 Protected',
+            speed: '⚡ Ready',
+            engine: '🔍 Multi-Engine',
+            mode: '🛡️ Secure'
         };
         
         this.init();
     }
 
+    /**
+     * Initialize the application
+     */
     init() {
-        this.loadSettings();
         this.bindEvents();
-        this.initTheme();
-        console.log('🔍 Mirror Search initialized with real search engines');
+        this.updateStatusBar();
+        this.showEmptyState();
+        console.log('🔍 Mirror Search initialized');
+        console.log('🔒 Privacy-first search engine ready');
     }
 
-    loadSettings() {
-        try {
-            const saved = localStorage.getItem('mirror-search-settings');
-            if (saved) {
-                this.settings = { ...this.settings, ...JSON.parse(saved) };
-            }
-        } catch (error) {
-            console.warn('Failed to load settings:', error);
-        }
-    }
-
-    saveSettings() {
-        try {
-            localStorage.setItem('mirror-search-settings', JSON.stringify(this.settings));
-        } catch (error) {
-            console.warn('Failed to save settings:', error);
-        }
-    }
-
+    /**
+     * Bind event listeners
+     */
     bindEvents() {
-        // Search form
-        const searchForm = document.getElementById('searchForm');
+        // Search input events
         const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const retryButton = document.getElementById('retryButton');
 
-        searchForm?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const query = searchInput.value.trim();
-            if (query) {
-                this.currentPage = 1;
-                this.lastQuery = query;
-                this.performSearch(query);
-            }
-        });
+        if (searchInput) {
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !this.isSearching) {
+                    this.performSearch();
+                }
+            });
 
-        // Settings modal
-        const settingsBtn = document.getElementById('settingsBtn');
-        const settingsModal = document.getElementById('settingsModal');
-        const closeSettings = document.getElementById('closeSettings');
-
-        settingsBtn?.addEventListener('click', () => {
-            this.showSettings();
-        });
-
-        closeSettings?.addEventListener('click', () => {
-            this.hideSettings();
-        });
-
-        settingsModal?.addEventListener('click', (e) => {
-            if (e.target === settingsModal) {
-                this.hideSettings();
-            }
-        });
-
-        // Settings controls
-        const searchEngine = document.getElementById('searchEngine');
-        const language = document.getElementById('language');
-        const theme = document.getElementById('theme');
-        const fullPrivacy = document.getElementById('fullPrivacy');
-
-        searchEngine?.addEventListener('change', (e) => {
-            this.settings.searchEngine = e.target.value;
-            this.saveSettings();
-            console.log(`🔧 Search engine changed to: ${e.target.value}`);
-        });
-
-        language?.addEventListener('change', (e) => {
-            this.settings.language = e.target.value;
-            this.saveSettings();
-        });
-
-        theme?.addEventListener('change', (e) => {
-            this.settings.theme = e.target.value;
-            this.setTheme(e.target.value);
-            this.saveSettings();
-        });
-
-        fullPrivacy?.addEventListener('change', (e) => {
-            this.settings.fullPrivacy = e.target.checked;
-            this.saveSettings();
-            console.log(`🔒 Full privacy mode: ${e.target.checked ? 'enabled' : 'disabled'}`);
-        });
-
-        // Error handling
-        const retryBtn = document.getElementById('retryBtn');
-        const fallbackBtn = document.getElementById('fallbackBtn');
-
-        retryBtn?.addEventListener('click', () => {
-            if (this.lastQuery) {
-                this.performSearch(this.lastQuery);
-            }
-        });
-
-        fallbackBtn?.addEventListener('click', () => {
-            if (this.lastQuery) {
-                // Try with a different engine
-                const currentEngine = this.settings.searchEngine;
-                const fallbackEngine = currentEngine === 'google' ? 'bing' : 'google';
-                this.performSearch(this.lastQuery, fallbackEngine);
-            }
-        });
-
-        // Load more results
-        const loadMoreBtn = document.getElementById('loadMore');
-        if (loadMoreBtn) {
-            loadMoreBtn.addEventListener('click', () => {
-                this.loadMoreResults();
+            searchInput.addEventListener('input', (e) => {
+                this.updateSearchInfo(e.target.value);
             });
         }
+
+        if (searchButton) {
+            searchButton.addEventListener('click', () => {
+                if (!this.isSearching) {
+                    this.performSearch();
+                }
+            });
+        }
+
+        if (retryButton) {
+            retryButton.addEventListener('click', () => {
+                if (this.currentQuery) {
+                    this.performSearch(this.currentQuery);
+                }
+            });
+        }
+
+        // Modal events
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                this.closeModal(e.target.id);
+            }
+        });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            // Ctrl+L or Cmd+L to focus search
-            if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+            if (e.key === 'Escape') {
+                this.closeAllModals();
+            }
+            if (e.key === '/' && !this.isInputFocused()) {
                 e.preventDefault();
                 searchInput?.focus();
-            }
-
-            // Escape to close modal
-            if (e.key === 'Escape') {
-                this.hideSettings();
             }
         });
     }
 
-    initTheme() {
-        this.setTheme(this.settings.theme);
-        
-        // Update settings form
-        const themeSelect = document.getElementById('theme');
-        if (themeSelect) {
-            themeSelect.value = this.settings.theme;
+    /**
+     * Check if an input element is currently focused
+     */
+    isInputFocused() {
+        const activeElement = document.activeElement;
+        return activeElement && (
+            activeElement.tagName === 'INPUT' || 
+            activeElement.tagName === 'TEXTAREA' ||
+            activeElement.contentEditable === 'true'
+        );
+    }
+
+    /**
+     * Update status bar indicators
+     */
+    updateStatusBar() {
+        const statusElements = {
+            privacyStatus: this.statusIndicators.privacy,
+            speedStatus: this.statusIndicators.speed,
+            engineStatus: this.statusIndicators.engine,
+            modeStatus: this.statusIndicators.mode
+        };
+
+        Object.entries(statusElements).forEach(([id, text]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                const textElement = element.querySelector('.status-text');
+                if (textElement) {
+                    textElement.textContent = text.split(' ').slice(1).join(' ');
+                }
+            }
+        });
+    }
+
+    /**
+     * Update search info text
+     */
+    updateSearchInfo(query) {
+        const searchInfo = document.getElementById('searchInfo');
+        if (searchInfo) {
+            if (query.trim()) {
+                searchInfo.textContent = `Press Enter to search for "${query.trim()}"`;
+            } else {
+                searchInfo.textContent = '';
+            }
         }
     }
 
-    setTheme(theme) {
-        this.currentTheme = theme;
-        document.documentElement.setAttribute('data-theme', theme);
-    }
-
-    showSettings() {
-        const modal = document.getElementById('settingsModal');
-        if (modal) {
-            modal.style.display = 'flex';
-            
-            // Update form values
-            document.getElementById('searchEngine').value = this.settings.searchEngine;
-            document.getElementById('language').value = this.settings.language;
-            document.getElementById('theme').value = this.settings.theme;
-            document.getElementById('fullPrivacy').checked = this.settings.fullPrivacy;
-        }
-    }
-
-    hideSettings() {
-        const modal = document.getElementById('settingsModal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    }
-
-    async performSearch(query, engine = null, page = 1) {
+    /**
+     * Perform search operation
+     */
+    async performSearch(query = null) {
         if (this.isSearching) return;
 
-        this.isSearching = true;
-        const searchEngine = engine || this.settings.searchEngine;
-        this.currentPage = page;
-        
-        // Show loading
-        this.showLoading();
-        if (page === 1) {
-            this.hideResults();
+        const searchInput = document.getElementById('searchInput');
+        const searchQuery = query || searchInput?.value?.trim();
+
+        if (!searchQuery) {
+            this.showError('Please enter a search term');
+            return;
         }
-        this.hideError();
+
+        this.currentQuery = searchQuery;
+        this.isSearching = true;
 
         try {
-            console.log(`🔍 Searching for: "${query}" via ${searchEngine} (page ${page})`);
-            console.log('📋 Request payload:', { q: query, engine: searchEngine, page: page });
-            
-            // Skip paraphrasing for now to speed up searches
-            // const paraphrasedQuery = await this.paraphraseQuery(query);
-            // console.log(`🔄 Query paraphrased: "${query}" → "${paraphrasedQuery}"`);
-            
-            // Make search request using POST endpoint
-            console.log('📡 Making fetch request to /search...');
+            this.showLoading();
+            this.hideEmptyState();
+            this.hideErrorState();
+
+            console.log(`🔍 Searching for: "${searchQuery}"`);
+
+            // Update status indicators
+            this.statusIndicators.speed = '🔄 Searching';
+            this.statusIndicators.engine = '🔍 Processing';
+            this.updateStatusBar();
+
+            const startTime = Date.now();
+
+            // Make search request
             const response = await fetch('/search', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    q: query, // Use original query directly
-                    engine: searchEngine,
-                    page: page
+                    query: searchQuery
                 })
             });
-            
-            console.log('📥 Response received:', response);
-            console.log('📊 Response status:', response.status, response.statusText);
-            
+
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                throw new Error(`Search failed: ${response.status} ${response.statusText}`);
             }
 
-            console.log('🔄 Parsing JSON response...');
             const data = await response.json();
-            console.log('🔍 Search response received:', data);
-            
-            if (data.error) {
-                throw new Error(data.error);
+            const processingTime = Date.now() - startTime;
+
+            console.log(`✅ Search completed: ${data.results?.length || 0} results in ${processingTime}ms`);
+
+            // Update status indicators with results
+            if (data.indicators) {
+                this.statusIndicators = { ...data.indicators };
+            } else {
+                this.statusIndicators.speed = processingTime < 1000 ? '⚡ Fast' : '🐌 Slow';
+                this.statusIndicators.engine = `🔍 ${data.engine || 'Unknown'}`;
             }
 
-            console.log('✅ Displaying results...');
-            this.displayResults(data, query, page === 1);
-            console.log('✅ Results displayed successfully');
-            
-            // Update search history
-            if (window.searchUtils && page === 1) {
-                window.searchUtils.addToHistory(query, searchEngine);
-            }
-            
+            this.updateStatusBar();
+            this.displayResults(data, searchQuery);
+
         } catch (error) {
             console.error('❌ Search error:', error);
-            console.error('❌ Error stack:', error.stack);
-            this.showError(error.message || 'Search failed. Please try again.', searchEngine);
+            this.showError(`Search failed: ${error.message}`);
+            
+            // Reset status indicators
+            this.statusIndicators.speed = '❌ Error';
+            this.statusIndicators.engine = '🔍 Failed';
+            this.updateStatusBar();
+
         } finally {
-            console.log('🏁 Search completed, hiding loading...');
-            this.hideLoading();
             this.isSearching = false;
-            console.log('🏁 isSearching flag reset to false');
+            this.hideLoading();
         }
     }
 
-    async loadMoreResults() {
-        if (!this.lastQuery || this.isSearching) return;
-        
-        const nextPage = this.currentPage + 1;
-        console.log(`📄 Loading page ${nextPage} for "${this.lastQuery}"`);
-        
-        await this.performSearch(this.lastQuery, this.settings.searchEngine, nextPage);
-    }
+    /**
+     * Show loading state
+     */
+    showLoading() {
+        const searchButton = document.getElementById('searchButton');
+        const searchInfo = document.getElementById('searchInfo');
 
-    async paraphraseQuery(query) {
-        try {
-            // Use WASM LLM for actual paraphrasing
-            if (window.wasmLLM && window.wasmLLM.isLoaded) {
-                const paraphrased = await window.wasmLLM.paraphrase(query, {
-                    temperature: 0.7,
-                    preserveKeywords: true
-                });
-                return paraphrased;
-            } else {
-                console.warn('WASM LLM not available, using original query');
-                return query;
-            }
-        } catch (error) {
-            console.error('Paraphrasing error:', error);
-            // Fallback to original query
-            return query;
+        if (searchButton) {
+            searchButton.classList.add('loading');
+            searchButton.disabled = true;
+        }
+
+        if (searchInfo) {
+            searchInfo.textContent = 'Searching...';
         }
     }
 
-    displayResults(data, originalQuery, clearPrevious = true) {
+    /**
+     * Hide loading state
+     */
+    hideLoading() {
+        const searchButton = document.getElementById('searchButton');
+        const searchInfo = document.getElementById('searchInfo');
+
+        if (searchButton) {
+            searchButton.classList.remove('loading');
+            searchButton.disabled = false;
+        }
+
+        if (searchInfo) {
+            searchInfo.textContent = '';
+        }
+    }
+
+    /**
+     * Display search results
+     */
+    displayResults(data, query) {
         const resultsContainer = document.getElementById('resultsContainer');
-        const resultsList = document.getElementById('resultsList');
-        const resultsInfo = document.getElementById('resultsInfo');
-        const loadMoreBtn = document.getElementById('loadMore');
+        const searchInfo = document.getElementById('searchInfo');
 
-        if (!resultsContainer || !resultsList || !resultsInfo) return;
+        if (!resultsContainer) return;
 
-        // Update results info
-        const totalResults = data.totalResults || 0;
-        const currentResults = data.results?.length || 0;
-        const pageInfo = data.page > 1 ? ` (Page ${data.page})` : '';
-        
-        resultsInfo.textContent = `Found ${totalResults.toLocaleString()} results for "${originalQuery}"${pageInfo} • ${data.searchTime}ms • ${data.engine}`;
-
-        // Clear previous results if this is page 1
-        if (clearPrevious) {
-            resultsList.innerHTML = '';
+        // Update search info
+        if (searchInfo) {
+            const resultCount = data.results?.length || 0;
+            const engine = data.engine || 'Unknown';
+            const time = data.processingTime || 0;
+            searchInfo.textContent = `Found ${resultCount} results for "${query}" via ${engine} in ${time}ms`;
         }
 
-        if (data.results && data.results.length > 0) {
-            // Display search results
-            data.results.forEach((result, index) => {
-                const resultElement = this.createResultElement(result, (data.page - 1) * 10 + index + 1);
-                resultsList.appendChild(resultElement);
-            });
+        // Clear previous results
+        resultsContainer.innerHTML = '';
 
-            // Show/hide load more button
-            if (loadMoreBtn) {
-                loadMoreBtn.style.display = data.nextPageUrl ? 'block' : 'none';
-            }
-        } else if (clearPrevious) {
-            // No results
-            resultsList.innerHTML = `
-                <div class="result-item">
-                    <div class="result-snippet">No results found for "${originalQuery}". Try different keywords or search engine.</div>
-                </div>
-            `;
+        if (!data.results || data.results.length === 0) {
+            this.showNoResults(query);
+            return;
         }
 
-        this.showResults();
+        // Display results with staggered animation
+        data.results.forEach((result, index) => {
+            setTimeout(() => {
+                const resultElement = this.createResultElement(result, index);
+                resultsContainer.appendChild(resultElement);
+            }, index * 100); // Stagger by 100ms
+        });
+
+        this.searchResults = data.results;
     }
 
-    createResultElement(result, displayRank) {
-        const div = document.createElement('div');
-        div.className = 'result-item';
-        
-        const proxyUrl = this.settings.fullPrivacy 
-            ? `/out?u=${encodeURIComponent(result.url)}&stream=1`
-            : result.url;
+    /**
+     * Create a result element
+     */
+    createResultElement(result, index) {
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'result-item';
+        resultDiv.style.animationDelay = `${index * 0.1}s`;
 
-        // Add favicon if available
-        const faviconHtml = result.favicon ? 
-            `<img src="${result.favicon}" alt="" class="result-favicon" width="16" height="16">` : 
-            `<span class="result-rank">${displayRank}</span>`;
+        const title = this.escapeHtml(result.title || 'Untitled');
+        const snippet = this.escapeHtml(result.snippet || 'No description available');
+        const url = this.escapeHtml(result.url || '#');
+        const source = this.escapeHtml(result.source || 'Unknown');
 
-        div.innerHTML = `
-            <div class="result-header">
-                ${faviconHtml}
-                <a href="${proxyUrl}" class="result-title" target="_blank" rel="noopener">
-                    ${this.escapeHtml(result.title)}
+        resultDiv.innerHTML = `
+            <div class="result-title">
+                <a href="${url}" target="_blank" rel="noopener noreferrer">
+                    ${title}
                 </a>
             </div>
-            <div class="result-url">${this.escapeHtml(result.displayUrl || result.url)}</div>
-            <div class="result-snippet">${this.escapeHtml(result.snippet)}</div>
+            <div class="result-url">${url}</div>
+            <div class="result-snippet">${snippet}</div>
+            <div class="result-source">
+                <span class="source-icon">${this.getSourceIcon(source)}</span>
+                <span>${source}</span>
+            </div>
         `;
 
-        return div;
+        return resultDiv;
     }
 
+    /**
+     * Get icon for search source
+     */
+    getSourceIcon(source) {
+        const icons = {
+            'DuckDuckGo': '🦆',
+            'DuckDuckGo Instant': '⚡',
+            'DuckDuckGo Definition': '📖',
+            'DuckDuckGo Answer': '💡',
+            'DuckDuckGo Related': '🔗',
+            'Google': '🔍',
+            'Bing': '🔎',
+            'Yahoo': '🌐'
+        };
+        return icons[source] || '🔍';
+    }
+
+    /**
+     * Show no results message
+     */
+    showNoResults(query) {
+        const resultsContainer = document.getElementById('resultsContainer');
+        if (!resultsContainer) return;
+
+        resultsContainer.innerHTML = `
+            <div class="result-item" style="text-align: center; padding: 3rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.6;">🔍</div>
+                <h3 style="margin-bottom: 1rem; color: var(--text-primary);">No results found</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                    No instant answers found for "${this.escapeHtml(query)}". 
+                    Try different keywords or check your spelling.
+                </p>
+                <button onclick="app.showEmptyState(); app.focusSearchInput();" 
+                        style="padding: 0.75rem 1.5rem; background: var(--primary-color); color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
+                    Try Another Search
+                </button>
+            </div>
+        `;
+    }
+
+    /**
+     * Show empty state
+     */
+    showEmptyState() {
+        const emptyState = document.getElementById('emptyState');
+        const resultsContainer = document.getElementById('resultsContainer');
+
+        if (emptyState) {
+            emptyState.style.display = 'block';
+        }
+        if (resultsContainer) {
+            resultsContainer.innerHTML = '';
+        }
+    }
+
+    /**
+     * Hide empty state
+     */
+    hideEmptyState() {
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
+    }
+
+    /**
+     * Show error state
+     */
+    showError(message) {
+        const errorState = document.getElementById('errorState');
+        const errorMessage = document.getElementById('errorMessage');
+
+        if (errorState) {
+            errorState.style.display = 'block';
+        }
+        if (errorMessage) {
+            errorMessage.textContent = message;
+        }
+
+        this.hideEmptyState();
+    }
+
+    /**
+     * Hide error state
+     */
+    hideErrorState() {
+        const errorState = document.getElementById('errorState');
+        if (errorState) {
+            errorState.style.display = 'none';
+        }
+    }
+
+    /**
+     * Focus search input
+     */
+    focusSearchInput() {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        }
+    }
+
+    /**
+     * Escape HTML to prevent XSS
+     */
     escapeHtml(text) {
-        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
-    showLoading() {
-        const loading = document.getElementById('loading');
-        if (loading) {
-            loading.style.display = 'flex';
+    /**
+     * Show modal
+     */
+    showModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
         }
     }
 
-    hideLoading() {
-        const loading = document.getElementById('loading');
-        if (loading) {
-            loading.style.display = 'none';
+    /**
+     * Close modal
+     */
+    closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
         }
     }
 
-    showResults() {
-        const container = document.getElementById('resultsContainer');
-        if (container) {
-            container.style.display = 'block';
-        }
-    }
-
-    hideResults() {
-        const container = document.getElementById('resultsContainer');
-        if (container) {
-            container.style.display = 'none';
-        }
-    }
-
-    showError(message, failedEngine = '') {
-        const errorContainer = document.getElementById('errorContainer');
-        const errorMessage = document.getElementById('errorMessage');
-        const fallbackBtn = document.getElementById('fallbackBtn');
-        
-        if (errorContainer && errorMessage) {
-            let fullMessage = message;
-            if (failedEngine) {
-                const suggestions = {
-                    'google': 'Try Bing or DuckDuckGo',
-                    'bing': 'Try Google or DuckDuckGo', 
-                    'duckduckgo': 'Try Google or Bing'
-                };
-                const suggestion = suggestions[failedEngine] || 'Try a different search engine';
-                fullMessage += ` (${failedEngine} failed - ${suggestion})`;
-            }
-            
-            errorMessage.textContent = fullMessage;
-            errorContainer.style.display = 'block';
-            
-            // Update fallback button text
-            if (fallbackBtn && failedEngine) {
-                const fallbackEngine = failedEngine === 'google' ? 'Bing' : 'Google';
-                fallbackBtn.textContent = `Try ${fallbackEngine}`;
-            }
-        }
-    }
-
-    hideError() {
-        const errorContainer = document.getElementById('errorContainer');
-        if (errorContainer) {
-            errorContainer.style.display = 'none';
-        }
+    /**
+     * Close all modals
+     */
+    closeAllModals() {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.classList.remove('show');
+        });
+        document.body.style.overflow = '';
     }
 }
 
-// Initialize the application when DOM is loaded
+/**
+ * Global functions for HTML onclick handlers
+ */
+function showAbout() {
+    app.showModal('aboutModal');
+}
+
+function showPrivacy() {
+    app.showModal('privacyModal');
+}
+
+function closeModal(modalId) {
+    app.closeModal(modalId);
+}
+
+/**
+ * Initialize application when DOM is ready
+ */
 document.addEventListener('DOMContentLoaded', () => {
-    window.mirrorSearch = new MirrorSearch();
-}); 
+    window.app = new MirrorSearch();
+    
+    // Console welcome messages
+    console.log('🔍 Mirror Search v2.0 - Privacy-First Web Search');
+    console.log('🔒 No tracking • No logs • No data collection');
+    console.log('⚡ Multi-engine search with intelligent fallback');
+    console.log('🛡️ Advanced bot protection and human-like behavior');
+    console.log('🌐 Powered by Bless Network');
+    console.log('');
+    console.log('💡 Tip: Press "/" to focus search input');
+    console.log('💡 Tip: Press "Escape" to close modals');
+});
+
+/**
+ * Handle page visibility changes
+ */
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        // Page became visible, update status
+        if (window.app && !window.app.isSearching) {
+            window.app.statusIndicators.speed = '⚡ Ready';
+            window.app.updateStatusBar();
+        }
+    }
+});
+
+/**
+ * Handle online/offline status
+ */
+window.addEventListener('online', () => {
+    if (window.app) {
+        window.app.statusIndicators.mode = '🛡️ Secure';
+        window.app.updateStatusBar();
+    }
+});
+
+window.addEventListener('offline', () => {
+    if (window.app) {
+        window.app.statusIndicators.mode = '📴 Offline';
+        window.app.updateStatusBar();
+    }
+});
+
+/**
+ * Export for module systems (if needed)
+ */
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = MirrorSearch;
+} 
