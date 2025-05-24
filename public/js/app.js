@@ -5,15 +5,18 @@
 
 class MirrorSearch {
     constructor() {
-        this.isSearching = false;
+        this.searchInput = document.getElementById('searchInput');
+        this.searchButton = document.getElementById('searchButton');
+        this.anonymizationToggle = document.getElementById('anonymizationToggle');
+        this.loadingState = document.getElementById('loadingState');
+        this.resultsContainer = document.getElementById('resultsContainer');
+        this.resultsList = document.getElementById('resultsList');
+        this.emptyState = document.getElementById('emptyState');
+        this.errorState = document.getElementById('errorState');
+        this.retryButton = document.getElementById('retryButton');
+        
         this.currentQuery = '';
-        this.searchResults = [];
-        this.statusIndicators = {
-            privacy: '🔒 Protected',
-            speed: '⚡ Ready',
-            engine: '🔍 Multi-Engine',
-            mode: '🛡️ Secure'
-        };
+        this.isSearching = false;
         
         this.init();
     }
@@ -25,6 +28,7 @@ class MirrorSearch {
         this.bindEvents();
         this.updateStatusBar();
         this.showEmptyState();
+        
         console.log('🔍 Mirror Search initialized');
         console.log('🔒 Privacy-first search engine ready');
     }
@@ -33,384 +37,274 @@ class MirrorSearch {
      * Bind event listeners
      */
     bindEvents() {
-        // Search input events
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
-        const retryButton = document.getElementById('retryButton');
+        // Search button click
+        this.searchButton.addEventListener('click', () => {
+            this.performSearch();
+        });
 
-        if (searchInput) {
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !this.isSearching) {
-                    this.performSearch();
-                }
-            });
-
-            searchInput.addEventListener('input', (e) => {
-                this.updateSearchInfo(e.target.value);
-            });
-        }
-
-        if (searchButton) {
-            searchButton.addEventListener('click', () => {
-                if (!this.isSearching) {
-                    this.performSearch();
-                }
-            });
-        }
-
-        if (retryButton) {
-            retryButton.addEventListener('click', () => {
-                if (this.currentQuery) {
-                    this.performSearch(this.currentQuery);
-                }
-            });
-        }
-
-        // Modal events
-        window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
-                this.closeModal(e.target.id);
+        // Enter key in search input
+        this.searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.performSearch();
             }
         });
 
-        // Keyboard shortcuts
+        // Retry button
+        this.retryButton.addEventListener('click', () => {
+            this.performSearch();
+        });
+
+        // Focus search input with "/" key
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.closeAllModals();
-            }
-            if (e.key === '/' && !this.isInputFocused()) {
+            if (e.key === '/' && document.activeElement !== this.searchInput) {
                 e.preventDefault();
-                searchInput?.focus();
+                this.searchInput.focus();
+            }
+            if (e.key === 'Escape') {
+                this.hideAllStates();
+                this.showEmptyState();
             }
         });
-    }
-
-    /**
-     * Check if an input element is currently focused
-     */
-    isInputFocused() {
-        const activeElement = document.activeElement;
-        return activeElement && (
-            activeElement.tagName === 'INPUT' || 
-            activeElement.tagName === 'TEXTAREA' ||
-            activeElement.contentEditable === 'true'
-        );
-    }
-
-    /**
-     * Update status bar indicators
-     */
-    updateStatusBar() {
-        const statusElements = {
-            privacyStatus: this.statusIndicators.privacy,
-            speedStatus: this.statusIndicators.speed,
-            engineStatus: this.statusIndicators.engine,
-            modeStatus: this.statusIndicators.mode
-        };
-
-        Object.entries(statusElements).forEach(([id, text]) => {
-            const element = document.getElementById(id);
-            if (element) {
-                const textElement = element.querySelector('.status-text');
-                if (textElement) {
-                    textElement.textContent = text.split(' ').slice(1).join(' ');
-                }
-            }
-        });
-    }
-
-    /**
-     * Update search info text
-     */
-    updateSearchInfo(query) {
-        const searchInfo = document.getElementById('searchInfo');
-        if (searchInfo) {
-            if (query.trim()) {
-                searchInfo.textContent = `Press Enter to search for "${query.trim()}"`;
-            } else {
-                searchInfo.textContent = '';
-            }
-        }
     }
 
     /**
      * Perform search operation
      */
-    async performSearch(query = null) {
-        if (this.isSearching) return;
-
-        const searchInput = document.getElementById('searchInput');
-        const searchQuery = query || searchInput?.value?.trim();
-
-        if (!searchQuery) {
-            this.showError('Please enter a search term');
+    async performSearch() {
+        const query = this.searchInput.value.trim();
+        
+        if (!query) {
+            this.showError('Please enter a search query');
             return;
         }
 
-        this.currentQuery = searchQuery;
+        if (this.isSearching) {
+            return;
+        }
+
+        this.currentQuery = query;
         this.isSearching = true;
+        
+        console.log(`🔍 Searching for: "${query}"`);
+        
+        this.showLoadingState();
+        this.updateSearchButton(true);
 
         try {
-            this.showLoading();
-            this.hideEmptyState();
-            this.hideErrorState();
+            // Clean query and prepare safe JSON
+            const cleanQuery = query.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
+            
+            const requestBody = {
+                query: cleanQuery,
+                useAnonymization: this.anonymizationToggle.checked
+            };
 
-            console.log(`🔍 Searching for: "${searchQuery}"`);
-
-            // Update status indicators
-            this.statusIndicators.speed = '🔄 Searching';
-            this.statusIndicators.engine = '🔍 Processing';
-            this.updateStatusBar();
-
-            const startTime = Date.now();
-
-            // Make search request
             const response = await fetch('/search', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    query: searchQuery
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
-                throw new Error(`Search failed: ${response.status} ${response.statusText}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
             const data = await response.json();
-            const processingTime = Date.now() - startTime;
-
-            console.log(`✅ Search completed: ${data.results?.length || 0} results in ${processingTime}ms`);
-
-            // Update status indicators with results
-            if (data.indicators) {
-                this.statusIndicators = { ...data.indicators };
-            } else {
-                this.statusIndicators.speed = processingTime < 1000 ? '⚡ Fast' : '🐌 Slow';
-                this.statusIndicators.engine = `🔍 ${data.engine || 'Unknown'}`;
+            
+            if (data.error) {
+                throw new Error(data.message || data.error);
             }
 
-            this.updateStatusBar();
-            this.displayResults(data, searchQuery);
-
+            this.displayResults(data);
+            
         } catch (error) {
             console.error('❌ Search error:', error);
-            this.showError(`Search failed: ${error.message}`);
-            
-            // Reset status indicators
-            this.statusIndicators.speed = '❌ Error';
-            this.statusIndicators.engine = '🔍 Failed';
-            this.updateStatusBar();
-
+            this.showError(error.message || 'Search failed. Please try again.');
         } finally {
             this.isSearching = false;
-            this.hideLoading();
+            this.updateSearchButton(false);
         }
     }
 
     /**
      * Show loading state
      */
-    showLoading() {
-        const searchButton = document.getElementById('searchButton');
-        const searchInfo = document.getElementById('searchInfo');
-
-        if (searchButton) {
-            searchButton.classList.add('loading');
-            searchButton.disabled = true;
-        }
-
-        if (searchInfo) {
-            searchInfo.textContent = 'Searching...';
-        }
-    }
-
-    /**
-     * Hide loading state
-     */
-    hideLoading() {
-        const searchButton = document.getElementById('searchButton');
-        const searchInfo = document.getElementById('searchInfo');
-
-        if (searchButton) {
-            searchButton.classList.remove('loading');
-            searchButton.disabled = false;
-        }
-
-        if (searchInfo) {
-            searchInfo.textContent = '';
-        }
+    showLoadingState() {
+        this.hideAllStates();
+        this.loadingState.classList.remove('hidden');
+        
+        // Animate loading steps - Bless Network uyumlu
+        const steps = ['step-anonymizing', 'step-searching', 'step-processing'];
+        let currentStep = 0;
+        
+        const animateSteps = () => {
+            // Remove active from all steps
+            steps.forEach(step => {
+                const element = document.getElementById(step);
+                if (element) element.classList.remove('active');
+            });
+            
+            // Add active to current step
+            if (currentStep < steps.length) {
+                const element = document.getElementById(steps[currentStep]);
+                if (element) element.classList.add('active');
+                currentStep++;
+                
+                // Bless Network uyumlu - setTimeout yerine requestAnimationFrame
+                if (this.isSearching && currentStep < steps.length) {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(animateSteps);
+                        });
+                    });
+                }
+            }
+        };
+        
+        animateSteps();
     }
 
     /**
      * Display search results
      */
-    displayResults(data, query) {
-        const resultsContainer = document.getElementById('resultsContainer');
-        const searchInfo = document.getElementById('searchInfo');
-
-        if (!resultsContainer) return;
-
-        // Update search info
-        if (searchInfo) {
-            const resultCount = data.results?.length || 0;
-            const engine = data.engine || 'Unknown';
-            const time = data.processingTime || 0;
-            searchInfo.textContent = `Found ${resultCount} results for "${query}" via ${engine} in ${time}ms`;
-        }
-
-        // Clear previous results
-        resultsContainer.innerHTML = '';
-
+    displayResults(data) {
+        this.hideAllStates();
+        
         if (!data.results || data.results.length === 0) {
-            this.showNoResults(query);
+            this.showError('No results found. Try a different search term.');
             return;
         }
 
-        // Display results with staggered animation
+        // Update results header
+        document.getElementById('resultsCount').textContent = `${data.totalResults} results`;
+        document.getElementById('searchTime').textContent = `${data.totalTime}ms`;
+        document.getElementById('searchEngine').textContent = data.engine;
+        
+        // Update privacy info
+        const privacyInfo = document.getElementById('privacyInfo');
+        if (data.status.anonymized) {
+            privacyInfo.innerHTML = '<span class="privacy-badge">🔒 Query Anonymized</span>';
+        } else {
+            privacyInfo.innerHTML = '<span class="privacy-badge">🔍 Direct Search</span>';
+        }
+
+        // Clear and populate results
+        this.resultsList.innerHTML = '';
+        
         data.results.forEach((result, index) => {
-            setTimeout(() => {
-                const resultElement = this.createResultElement(result, index);
-                resultsContainer.appendChild(resultElement);
-            }, index * 100); // Stagger by 100ms
+            const resultElement = this.createResultElement(result, index);
+            this.resultsList.appendChild(resultElement);
         });
 
-        this.searchResults = data.results;
+        this.resultsContainer.classList.remove('hidden');
+        this.updateStatusBar(data.status);
     }
 
     /**
      * Create a result element
      */
     createResultElement(result, index) {
-        const resultDiv = document.createElement('div');
-        resultDiv.className = 'result-item';
-        resultDiv.style.animationDelay = `${index * 0.1}s`;
-
-        const title = this.escapeHtml(result.title || 'Untitled');
-        const snippet = this.escapeHtml(result.snippet || 'No description available');
-        const url = this.escapeHtml(result.url || '#');
-        const source = this.escapeHtml(result.source || 'Unknown');
-
-        resultDiv.innerHTML = `
-            <div class="result-title">
-                <a href="${url}" target="_blank" rel="noopener noreferrer">
-                    ${title}
-                </a>
+        const div = document.createElement('div');
+        div.className = 'result-item';
+        div.style.animationDelay = `${index * 100}ms`;
+        
+        const sourceColor = this.getSourceColor(result.source);
+        
+        div.innerHTML = `
+            <div class="result-header">
+                <h3 class="result-title">
+                    <a href="${result.url}" target="_blank" rel="noopener noreferrer">
+                        ${this.escapeHtml(result.title)}
+                    </a>
+                </h3>
+                <span class="result-source" style="background-color: ${sourceColor}">
+                    ${result.source}
+                </span>
             </div>
-            <div class="result-url">${url}</div>
-            <div class="result-snippet">${snippet}</div>
-            <div class="result-source">
-                <span class="source-icon">${this.getSourceIcon(source)}</span>
-                <span>${source}</span>
-            </div>
+            <p class="result-snippet">${this.escapeHtml(result.snippet)}</p>
+            <div class="result-url">${this.escapeHtml(result.url)}</div>
         `;
-
-        return resultDiv;
+        
+        return div;
     }
 
     /**
-     * Get icon for search source
+     * Get color for search source
      */
-    getSourceIcon(source) {
-        const icons = {
-            'DuckDuckGo': '🦆',
-            'DuckDuckGo Instant': '⚡',
-            'DuckDuckGo Definition': '📖',
-            'DuckDuckGo Answer': '💡',
-            'DuckDuckGo Related': '🔗',
-            'Google': '🔍',
-            'Bing': '🔎',
-            'Yahoo': '🌐'
+    getSourceColor(source) {
+        const colors = {
+            'DuckDuckGo': '#de5833',
+            'DuckDuckGo Instant': '#de5833',
+            'DuckDuckGo Definition': '#de5833',
+            'DuckDuckGo Answer': '#de5833',
+            'DuckDuckGo Related': '#de5833',
+            'Google': '#4285f4',
+            'Bing': '#0078d4',
+            'Yahoo': '#7b0099'
         };
-        return icons[source] || '🔍';
-    }
-
-    /**
-     * Show no results message
-     */
-    showNoResults(query) {
-        const resultsContainer = document.getElementById('resultsContainer');
-        if (!resultsContainer) return;
-
-        resultsContainer.innerHTML = `
-            <div class="result-item" style="text-align: center; padding: 3rem;">
-                <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.6;">🔍</div>
-                <h3 style="margin-bottom: 1rem; color: var(--text-primary);">No results found</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
-                    No instant answers found for "${this.escapeHtml(query)}". 
-                    Try different keywords or check your spelling.
-                </p>
-                <button onclick="app.showEmptyState(); app.focusSearchInput();" 
-                        style="padding: 0.75rem 1.5rem; background: var(--primary-color); color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
-                    Try Another Search
-                </button>
-            </div>
-        `;
-    }
-
-    /**
-     * Show empty state
-     */
-    showEmptyState() {
-        const emptyState = document.getElementById('emptyState');
-        const resultsContainer = document.getElementById('resultsContainer');
-
-        if (emptyState) {
-            emptyState.style.display = 'block';
-        }
-        if (resultsContainer) {
-            resultsContainer.innerHTML = '';
-        }
-    }
-
-    /**
-     * Hide empty state
-     */
-    hideEmptyState() {
-        const emptyState = document.getElementById('emptyState');
-        if (emptyState) {
-            emptyState.style.display = 'none';
-        }
+        return colors[source] || '#6b7280';
     }
 
     /**
      * Show error state
      */
     showError(message) {
-        const errorState = document.getElementById('errorState');
-        const errorMessage = document.getElementById('errorMessage');
-
-        if (errorState) {
-            errorState.style.display = 'block';
-        }
-        if (errorMessage) {
-            errorMessage.textContent = message;
-        }
-
-        this.hideEmptyState();
+        this.hideAllStates();
+        document.getElementById('errorMessage').textContent = message;
+        this.errorState.classList.remove('hidden');
     }
 
     /**
-     * Hide error state
+     * Show empty state
      */
-    hideErrorState() {
-        const errorState = document.getElementById('errorState');
-        if (errorState) {
-            errorState.style.display = 'none';
+    showEmptyState() {
+        this.hideAllStates();
+        this.emptyState.classList.remove('hidden');
+    }
+
+    /**
+     * Hide all states
+     */
+    hideAllStates() {
+        this.loadingState.classList.add('hidden');
+        this.resultsContainer.classList.add('hidden');
+        this.errorState.classList.add('hidden');
+        this.emptyState.classList.add('hidden');
+    }
+
+    /**
+     * Update search button
+     */
+    updateSearchButton(isLoading) {
+        if (isLoading) {
+            this.searchButton.disabled = true;
+            this.searchButton.innerHTML = '<span class="button-text">Searching...</span><span class="button-icon">⏳</span>';
+        } else {
+            this.searchButton.disabled = false;
+            this.searchButton.innerHTML = '<span class="button-text">Search</span><span class="button-icon">🔍</span>';
         }
     }
 
     /**
-     * Focus search input
+     * Update status bar indicators
      */
-    focusSearchInput() {
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.focus();
-            searchInput.select();
-        }
+    updateStatusBar(status = null) {
+        const statusItems = {
+            'protected-status': status?.protected !== false,
+            'ai-status': true,
+            'speed-status': status?.fast !== false,
+            'engine-status': true,
+            'secure-status': status?.secure !== false
+        };
+
+        Object.entries(statusItems).forEach(([id, isActive]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.classList.toggle('active', isActive);
+            }
+        });
     }
 
     /**
@@ -420,39 +314,6 @@ class MirrorSearch {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
-    }
-
-    /**
-     * Show modal
-     */
-    showModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    /**
-     * Close modal
-     */
-    closeModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.remove('show');
-            document.body.style.overflow = '';
-        }
-    }
-
-    /**
-     * Close all modals
-     */
-    closeAllModals() {
-        const modals = document.querySelectorAll('.modal');
-        modals.forEach(modal => {
-            modal.classList.remove('show');
-        });
-        document.body.style.overflow = '';
     }
 }
 
@@ -475,17 +336,17 @@ function closeModal(modalId) {
  * Initialize application when DOM is ready
  */
 document.addEventListener('DOMContentLoaded', () => {
-    window.app = new MirrorSearch();
+    new MirrorSearch();
     
-    // Console welcome messages
-    console.log('🔍 Mirror Search v2.0 - Privacy-First Web Search');
-    console.log('🔒 No tracking • No logs • No data collection');
-    console.log('⚡ Multi-engine search with intelligent fallback');
-    console.log('🛡️ Advanced bot protection and human-like behavior');
-    console.log('🌐 Powered by Bless Network');
+    // Console branding
+    console.log('%c🔍 Mirror Search v2.1 - Privacy-First AI Search Engine', 'color: #3b82f6; font-size: 16px; font-weight: bold;');
+    console.log('%c🔒 No tracking • No logs • No data collection', 'color: #10b981; font-size: 12px;');
+    console.log('%c⚡ Multi-engine search with WASM LLM anonymization', 'color: #f59e0b; font-size: 12px;');
+    console.log('%c🛡️ Advanced privacy protection and secure by design', 'color: #ef4444; font-size: 12px;');
+    console.log('%c🌐 Powered by Bless Network', 'color: #8b5cf6; font-size: 12px;');
     console.log('');
-    console.log('💡 Tip: Press "/" to focus search input');
-    console.log('💡 Tip: Press "Escape" to close modals');
+    console.log('%c💡 Tip: Press "/" to focus search input', 'color: #6b7280; font-size: 11px;');
+    console.log('%c💡 Tip: Press "Escape" to close modals', 'color: #6b7280; font-size: 11px;');
 });
 
 /**

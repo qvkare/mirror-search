@@ -1,5 +1,5 @@
 name = "mirror-search"
-version = "2.0.0"
+version = "2.1.0"
 type = "html"
 production_host = "coffee-cockroach-rachelle-6byahvr4.bls.dev"
 environment = "production"
@@ -18,8 +18,8 @@ permissions = [
 
 [build]
 dir = "build"
-entry = "debug.wasm"
-command = "npm run build:debug"
+entry = "index.ts"
+command = "npm run build"
 
 [build_release]
 dir = "build"
@@ -28,10 +28,29 @@ command = "npm run build:release"
 
 [[deployments]]
 name = "blessnet"
-description = ""
+description = "Mirror Search with WASM LLM - Privacy-First AI Search Engine"
 cid = "bafybeicuaztkbnjk24ppgfmi3vmxdkc6tywjlhtdrncavtvjwtmm7q4lfy"
 created = "2025-05-23T15:54:58.372Z"
 
   [deployments.runtime]
   url = "blessnet.tar.gz"
   checksum = "f9f895afb7e5e3f340e4362cb4f78c0d54807965af86dbc7c2e23e47fa294507"
+
+[permissions]
+fs = ["read", "write"]
+network = [
+  "api.duckduckgo.com",
+  "fonts.googleapis.com",
+  "fonts.gstatic.com"
+]
+
+[features]
+wasm = true
+llm = true
+privacy = true
+
+[metadata]
+title = "Mirror Search - Privacy-First AI Search Engine"
+description = "Advanced search engine with WASM LLM query anonymization"
+author = "Mirror Search Team"
+license = "MIT"

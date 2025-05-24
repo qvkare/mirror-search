@@ -1,29 +1,33 @@
 {
 	"name": "mirror-search",
-	"version": "1.0.0",
-	"description": "Privacy-preserving search engine using Bless Network edge nodes with local WASM LLM paraphrasing",
-	"main": "index.js",
+	"version": "2.1.0-onnx-llm",
+	"description": "Privacy-First AI Search Engine with ONNX LLM",
+	"main": "index.ts",
 	"scripts": {
 		"clean": "rm -rf build",
-		"build:release": "mkdirp ./build && bls-sdk-ts build ./index.ts -o ./build -f release.wasm",
-		"build:debug": "mkdirp ./build && bls-sdk-ts build ./index.ts -o ./build -f debug.wasm",
+		"build": "npm run build:debug",
+		"build:release": "mkdir -p ./build/ && bls-sdk-ts build ./index.ts -o ./build -f release.wasm",
+		"build:debug": "mkdir -p ./build/ && bls-sdk-ts build ./index.ts -o ./build -f debug.wasm",
 		"invoke": "bls-runtime ./build/debug.wasm",
 		"dev": "npm run build:debug && npm run invoke",
 		"test": "vitest",
 		"lint": "eslint . --ext .ts,.js",
-		"format": "prettier --write ."
+		"format": "prettier --write .",
+		"preview": "npx blessnet preview",
+		"deploy": "npx blessnet deploy"
 	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/your-username/mirror-search.git"
 	},
 	"keywords": [
-		"privacy",
 		"search",
-		"bless-network",
+		"privacy",
+		"ai",
 		"wasm",
 		"llm",
-		"proxy"
+		"anonymization",
+		"bless-network"
 	],
 	"author": "Mirror Search Team",
 	"license": "MIT",
@@ -32,7 +36,9 @@
 	},
 	"homepage": "https://github.com/blocklessnetwork/template-javy-typescript-hello-world#readme",
 	"dependencies": {
-		"@blockless/sdk-ts": "^1.0.5",
+		"@blockless/sdk-ts": "^1.0.0",
+		"@huggingface/transformers": "^3.0.0",
+		"onnxruntime-web": "^1.17.0",
 		"cheerio": "^1.0.0-rc.12",
 		"mkdirp": "^3.0.1",
 		"user-agents": "^1.1.0"
@@ -44,7 +50,8 @@
 		"@typescript-eslint/parser": "^8.32.1",
 		"eslint": "^8.0.0",
 		"prettier": "^3.0.0",
-		"vitest": "^1.0.0"
+		"vitest": "^1.0.0",
+		"typescript": "^5.0.0"
 	},
 	"bls": {
 		"functionId": "bless-function_mirror-search-1.0.0"

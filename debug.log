@@ -766,3 +766,11 @@
        22: 0xa9b1d - <unknown>!<wasm function 312>
        23: 0x84fed - <unknown>!<wasm function 171>
        24: 0xefeb5 - <unknown>!<wasm function 1281>
+[2025-05-24T08:01:29Z ERROR bls_runtime] panicked at /Users/runner/work/bls-runtime/bls-runtime/blockless/src/lib.rs:488:22:
+    called `Result::unwrap()` on an `Err` value: unknown import: `blockless_llm::llm_set_model_request` has not been defined
+[2025-05-24T08:01:30Z ERROR bls_runtime] panicked at /Users/runner/work/bls-runtime/bls-runtime/blockless/src/lib.rs:488:22:
+    called `Result::unwrap()` on an `Err` value: unknown import: `blockless_llm::llm_set_model_request` has not been defined
+[2025-05-24T08:28:45Z ERROR blockless] error: error while executing at wasm backtrace:
+        0: 0xf05d7 - <unknown>!<wasm function 1281>
+[2025-05-24T08:55:59Z ERROR blockless] error: error while executing at wasm backtrace:
+        0: 0xf05d7 - <unknown>!<wasm function 1281>
