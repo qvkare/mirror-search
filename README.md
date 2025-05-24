@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/logo.png" alt="Mirror Search Logo" width="120" height="120">
+  <img src="assets/logo.png" alt="Mirror Search Logo" width="800" height="500">
   <h1>Mirror Search - Privacy-First AI Search Engine</h1>
   <p><em>A privacy-preserving search engine powered by <strong>ONNX.js</strong> for intelligent query anonymization</em></p>
 </div>
