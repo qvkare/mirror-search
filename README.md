@@ -6,7 +6,7 @@
   <p><em>A decentralized privacy-first search engine built on <strong>Bless Network</strong> infrastructure with ONNX.js AI anonymization</em></p>
 </div>
 
-# 🔗 **Live**: [https://coffee-cockroach-rachelle-6byahvr4.bls.dev](https://coffee-cockroach-rachelle-6byahvr4.bls.dev)
+#### 🔗 **Live**: [https://coffee-cockroach-rachelle-6byahvr4.bls.dev](https://coffee-cockroach-rachelle-6byahvr4.bls.dev)
 ---
 
 ## **Key Features**
