@@ -28,16 +28,16 @@ command = "npm run build:release"
 
 [[deployments]]
 name = "blessnet"
-description = "Mirror Search with WASM LLM - Privacy-First AI Search Engine"
-cid = "bafybeicuaztkbnjk24ppgfmi3vmxdkc6tywjlhtdrncavtvjwtmm7q4lfy"
-created = "2025-05-23T15:54:58.372Z"
+description = ""
+cid = "bafybeicyaduwyun4xbhhr5qn4djm4wmz4demm4rnqc2vs3udguqb5ulyli"
+created = "2025-05-25T19:47:33.744Z"
 
   [deployments.runtime]
   url = "blessnet.tar.gz"
-  checksum = "f9f895afb7e5e3f340e4362cb4f78c0d54807965af86dbc7c2e23e47fa294507"
+  checksum = "a4e27dfba3c489efba6c8b648a34fc976d891b70b94a68b900ccff4b0522ecf2"
 
 [permissions]
-fs = ["read", "write"]
+fs = [ "read", "write" ]
 network = [
   "api.duckduckgo.com",
   "fonts.googleapis.com",

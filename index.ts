@@ -218,6 +218,7 @@ server.get('/', (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mirror Search - Privacy-First AI Search</title>
+    <link rel="icon" type="image/png" href="assets/logo-icon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* Modern CSS Variables */
@@ -257,11 +258,12 @@ server.get('/', (req, res) => {
             line-height: 1.6;
             min-height: 100vh;
             overflow-x: hidden;
+            transition: all 0.5s ease-in-out;
         }
 
         body::before {
             content: '';
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -270,6 +272,33 @@ server.get('/', (req, res) => {
             background-size: cover;
             background-position: center;
             z-index: -1;
+            opacity: 1;
+            transition: opacity 0.8s ease-in-out;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-image: url('assets/background2.png');
+            background-size: cover;
+            background-position: center;
+            z-index: -2;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+        }
+
+        body.search-active::after {
+            opacity: 1;
+            z-index: -1;
+        }
+
+        body.search-active::before {
+            opacity: 0;
+            z-index: -2;
         }
 
         .container {
@@ -277,18 +306,19 @@ server.get('/', (req, res) => {
             margin: 0 auto;
             padding: 2rem;
             min-height: 100vh;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            align-items: center;
-            gap: 4rem;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            padding-top: 4rem;
         }
 
-        /* Left Side - Search Interface */
+        /* Search Interface */
         .search-side {
             display: flex;
             flex-direction: column;
             gap: 2rem;
-            max-width: 600px;
+            max-width: 500px;
+            width: 100%;
         }
 
         /* Glass Morphism Card */
@@ -297,7 +327,7 @@ server.get('/', (req, res) => {
             backdrop-filter: blur(20px);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-lg);
-            padding: 2rem;
+            padding: 1.5rem;
             box-shadow: var(--shadow-glass);
             transition: var(--transition);
         }
@@ -309,15 +339,25 @@ server.get('/', (req, res) => {
 
         /* Logo and Branding */
         .brand-section {
-            text-align: left;
-            margin-bottom: 1.5rem;
+            text-align: center;
+            margin-bottom: 0;
+        }
+
+        .logo-container { 
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 14.5rem;
+            height: 14.5rem; 
         }
 
         .logo {
             font-size: 2rem;
             font-weight: 700;
             color: var(--text-light);
-            margin-bottom: 0.5rem;
+            margin: 0;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
@@ -351,18 +391,19 @@ server.get('/', (req, res) => {
 
         /* Search Box */
         .search-box-container {
-            margin-bottom: 2rem;
+            margin-bottom: 0;
         }
 
         .search-box {
+            position: relative;
             display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         #searchInput {
             flex: 1;
-            padding: 1rem 1.5rem;
+            width: 100%;
+            padding: 1rem 5rem 1rem 1.5rem;
             border: 2px solid var(--border-glass);
             border-radius: var(--radius);
             font-size: 1rem;
@@ -384,29 +425,33 @@ server.get('/', (req, res) => {
         }
 
         .search-button {
-            padding: 1rem 2rem;
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
-            color: white;
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 0.5rem;
+            background: transparent;
+            color: var(--text-secondary);
             border: none;
-            border-radius: var(--radius);
-            font-size: 1rem;
-            font-weight: 600;
+            border-radius: 50%;
+            font-size: 1.2rem;
             cursor: pointer;
             transition: var(--transition);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            box-shadow: var(--shadow);
-            white-space: nowrap;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
         }
 
         .search-button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--primary-color);
+            transform: translateY(-50%) scale(1.1);
         }
 
         .search-button:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
@@ -451,7 +496,7 @@ server.get('/', (req, res) => {
         }
 
         input[type="checkbox"]:checked + .toggle-slider {
-            background: rgba(255, 255, 255, 0.4);
+            background: rgb(77 139 169);
             border-color: rgba(255, 255, 255, 0.6);
         }
 
@@ -570,8 +615,8 @@ server.get('/', (req, res) => {
 
         /* Results */
         .results-container {
-            grid-column: 1 / -1;
-            margin-top: 3rem;
+            margin-top: 7.3rem;
+            padding-left: 1rem;
         }
 
         .results-header {
@@ -780,38 +825,50 @@ server.get('/', (req, res) => {
         /* Responsive Design */
         @media (max-width: 1024px) {
             .container {
-                grid-template-columns: 1fr;
-                gap: 2rem;
                 padding: 1.5rem;
+                padding-top: 3rem;
             }
             
-            .visual-side {
-                order: -1;
-                min-height: 40vh;
-            }
-            
-            .visual-title {
-                font-size: 2rem;
+            .search-side {
+                max-width: 100%;
             }
         }
 
         @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+                padding-top: 2rem;
+            }
+            
             .search-card {
-                padding: 2rem;
+                padding: 1rem;
             }
             
             .search-box {
-                flex-direction: column;
-                gap: 1rem;
+                margin-bottom: 1rem;
+            }
+            
+            #searchInput {
+                padding: 1rem 4rem 1rem 1rem;
+                font-size: 0.9rem;
             }
             
             .search-button {
-                justify-content: center;
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
             }
             
-            .status-bar {
-                flex-wrap: wrap;
+            .logo-container {
                 gap: 0.5rem;
+            }
+            
+            .logo-icon {
+                width: 2rem;
+                height: 2rem;
+            }
+            
+            .logo {
+                font-size: 1.5rem;
             }
         }
 
@@ -834,39 +891,13 @@ server.get('/', (req, res) => {
     <div class="container">
         <!-- Left Side - Search Interface -->
         <div class="search-side">
-            <!-- Status Bar -->
-            <div class="status-bar">
-                <div class="status-item" id="statusProtected">
-                    <span>Protected</span>
-                </div>
-                <div class="status-item" id="statusFast">
-                    <span>Fast</span>
-                </div>
-                <div class="status-item" id="statusSecure">
-                    <span>Secure</span>
-                </div>
-                <div class="status-item" id="statusAnonymized">
-                    <span>AI Ready</span>
-                </div>
-                <div class="status-item" id="statusBlessNetwork">
-                    <span>Bless Network</span>
-                </div>
-                <div class="status-item" id="statusWasmLLM">
-                    <span>WASM LLM v2.1</span>
-                </div>
-                <a href="/llm-status" class="status-item status-link" id="statusAILink">
-                    <span>AI Status</span>
-                </a>
-            </div>
-
             <!-- Main Search Card -->
-            <div class="search-card">
+            <div>
                 <!-- Brand Section -->
                 <div class="brand-section">
-                    <h1 class="logo">Mirror Search</h1>
-                    <p class="tagline">Privacy-first search with AI anonymization</p>
-                    <div class="ai-badge">
-                        <span>ONNX.js Powered</span>
+                    <div class="logo-container">
+                       <a href="https://coffee-cockroach-rachelle-6byahvr4.bls.dev"> <img src="assets/logo-icon.png" alt="Mirror Search" class="logo-icon">
+                         </a>
                     </div>
                 </div>
 
@@ -880,7 +911,7 @@ server.get('/', (req, res) => {
                             autocomplete="off"
                         >
                         <button id="searchButton" class="search-button">
-                            <span>Search</span>
+                            🔍
                         </button>
                     </div>
 
@@ -893,14 +924,6 @@ server.get('/', (req, res) => {
                         </label>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Right Side - Visual Content -->
-        <div class="visual-side">
-            <div class="visual-content">
-                <h2 class="visual-title">Search Privately</h2>
-                <p class="visual-subtitle">Your queries, anonymized by AI</p>
             </div>
         </div>
 
@@ -987,6 +1010,7 @@ server.get('/', (req, res) => {
                     }
                     if (e.key === 'Escape') {
                         this.hideAllStates();
+                        document.body.classList.remove('search-active');
                     }
                 });
             }
@@ -1005,6 +1029,9 @@ server.get('/', (req, res) => {
 
                 this.currentQuery = query;
                 this.isSearching = true;
+                
+                // Arama başladığında ikinci arkaplanı aktif et
+                document.body.classList.add('search-active');
                 
                 console.log('🔍 Searching for: "' + query + '"');
                 
@@ -1182,10 +1209,10 @@ server.get('/', (req, res) => {
             updateSearchButton(isLoading) {
                 if (isLoading) {
                     this.searchButton.disabled = true;
-                    this.searchButton.innerHTML = '<span class="button-text">Searching...</span><span class="button-icon">⏳</span>';
+                    this.searchButton.innerHTML = '⏳';
                 } else {
                     this.searchButton.disabled = false;
-                    this.searchButton.innerHTML = '<span class="button-text">Search</span><span class="button-icon">🔍</span>';
+                    this.searchButton.innerHTML = '🔍';
                 }
             }
 
