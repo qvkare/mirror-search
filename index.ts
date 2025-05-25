@@ -222,21 +222,26 @@ server.get('/', (req, res) => {
     <style>
         /* Modern CSS Variables */
         :root {
-            --primary-color: #3b82f6;
-            --primary-hover: #2563eb;
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
             --secondary-color: #6b7280;
             --success-color: #10b981;
             --warning-color: #f59e0b;
             --error-color: #ef4444;
             --background: #ffffff;
-            --surface: #f8fafc;
+            --surface: rgba(255, 255, 255, 0.95);
+            --surface-glass: rgba(255, 255, 255, 0.1);
             --text-primary: #1f2937;
             --text-secondary: #6b7280;
+            --text-light: #ffffff;
             --border: #e5e7eb;
-            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --radius: 0.5rem;
-            --transition: all 0.2s ease-in-out;
+            --border-glass: rgba(255, 255, 255, 0.2);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            --radius: 1rem;
+            --radius-lg: 1.5rem;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
@@ -247,140 +252,157 @@ server.get('/', (req, res) => {
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--background);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-image: url('assets/background.png');
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 1rem;
+            padding: 2rem;
             min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            gap: 4rem;
+        }
+
+        /* Left Side - Search Interface */
+        .search-side {
             display: flex;
             flex-direction: column;
+            gap: 2rem;
+            max-width: 600px;
         }
 
-        /* Status Bar */
-        .status-bar {
-            display: flex;
-            gap: 1rem;
-            padding: 1rem;
-            background: var(--surface);
-            border-radius: var(--radius);
-            margin-bottom: 2rem;
-            box-shadow: var(--shadow);
-            flex-wrap: wrap;
-        }
-
-        .status-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: white;
-            border-radius: var(--radius);
-            font-size: 0.875rem;
-            font-weight: 500;
+        /* Glass Morphism Card */
+        .search-card {
+            background: var(--surface-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-glass);
             transition: var(--transition);
-            border: 1px solid var(--border);
         }
 
-        .status-item.active {
-            background: var(--success-color);
-            color: white;
-            border-color: var(--success-color);
+        .search-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
         }
 
-        /* Main Search Container */
-        .search-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            max-width: 800px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .logo-container {
-            text-align: center;
-            margin-bottom: 3rem;
+        /* Logo and Branding */
+        .brand-section {
+            text-align: left;
+            margin-bottom: 1.5rem;
         }
 
         .logo {
-            font-size: 3rem;
+            font-size: 2rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: var(--text-light);
             margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .tagline {
-            font-size: 1.125rem;
-            color: var(--text-secondary);
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
             margin-bottom: 1rem;
+            font-weight: 300;
         }
 
         .ai-badge {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
             color: white;
             border-radius: 2rem;
             font-size: 0.875rem;
             font-weight: 500;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border: 1px solid var(--border-glass);
+        }
+
+        .ai-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
         }
 
         /* Search Box */
         .search-box-container {
-            width: 100%;
             margin-bottom: 2rem;
         }
 
         .search-box {
             display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         #searchInput {
             flex: 1;
             padding: 1rem 1.5rem;
-            border: 2px solid var(--border);
+            border: 2px solid var(--border-glass);
             border-radius: var(--radius);
             font-size: 1rem;
             transition: var(--transition);
-            background: white;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            color: var(--text-primary);
+        }
+
+        #searchInput::placeholder {
+            color: var(--text-secondary);
         }
 
         #searchInput:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            background: rgba(255, 255, 255, 0.95);
         }
 
         .search-button {
             padding: 1rem 2rem;
-            background: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
             color: white;
             border: none;
             border-radius: var(--radius);
             font-size: 1rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            box-shadow: var(--shadow);
+            white-space: nowrap;
         }
 
         .search-button:hover:not(:disabled) {
-            background: var(--primary-hover);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
         }
 
         .search-button:disabled {
@@ -391,25 +413,28 @@ server.get('/', (req, res) => {
         /* Privacy Options */
         .privacy-options {
             display: flex;
-            justify-content: center;
+            align-items: center;
+            gap: 1rem;
         }
 
         .privacy-toggle {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
             cursor: pointer;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
         }
 
         .toggle-slider {
             position: relative;
-            width: 44px;
-            height: 24px;
-            background: var(--border);
-            border-radius: 12px;
+            width: 52px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 14px;
             transition: var(--transition);
+            border: 1px solid var(--border-glass);
         }
 
         .toggle-slider::before {
@@ -417,35 +442,106 @@ server.get('/', (req, res) => {
             position: absolute;
             top: 2px;
             left: 2px;
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             background: white;
             border-radius: 50%;
             transition: var(--transition);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         input[type="checkbox"]:checked + .toggle-slider {
-            background: var(--primary-color);
+            background: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.6);
         }
 
         input[type="checkbox"]:checked + .toggle-slider::before {
-            transform: translateX(20px);
+            transform: translateX(24px);
         }
 
         input[type="checkbox"] {
             display: none;
         }
 
+        /* Status Bar */
+        .status-bar {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: var(--transition);
+            border: 1px solid var(--border-glass);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .status-item.active {
+            background: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+        }
+
+        .status-link {
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .status-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Right Side - Visual Space */
+        .visual-side {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+        }
+
+        .visual-content {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .visual-title {
+            font-size: 3rem;
+            font-weight: 300;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .visual-subtitle {
+            font-size: 1.25rem;
+            font-weight: 400;
+            opacity: 0.8;
+        }
+
         /* Loading State */
         .loading-state {
             text-align: center;
-            padding: 3rem;
+            padding: 2rem;
+            background: var(--surface-glass);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-glass);
+            margin-top: 2rem;
         }
 
         .loading-spinner {
             width: 40px;
             height: 40px;
-            border: 3px solid var(--border);
+            border: 3px solid rgba(255, 255, 255, 0.3);
             border-top: 3px solid var(--primary-color);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -458,91 +554,103 @@ server.get('/', (req, res) => {
         }
 
         .loading-step {
-            padding: 0.5rem;
-            margin: 0.25rem 0;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
             border-radius: var(--radius);
             opacity: 0.5;
             transition: var(--transition);
+            color: rgba(255, 255, 255, 0.8);
         }
 
         .loading-step.active {
             opacity: 1;
-            background: var(--surface);
+            background: rgba(255, 255, 255, 0.1);
             font-weight: 500;
         }
 
         /* Results */
         .results-container {
-            width: 100%;
-            margin-top: 2rem;
+            grid-column: 1 / -1;
+            margin-top: 3rem;
         }
 
         .results-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem;
-            background: var(--surface);
-            border-radius: var(--radius);
-            margin-bottom: 1rem;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
+            padding: 1.5rem;
+            background: var(--surface-glass);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--border-glass);
         }
 
         .results-info {
             display: flex;
-            gap: 1rem;
+            gap: 1.5rem;
+            flex-wrap: wrap;
         }
 
         .privacy-badge {
-            padding: 0.25rem 0.75rem;
-            background: var(--success-color);
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
             color: white;
-            border-radius: 1rem;
-            font-size: 0.75rem;
-            font-weight: 500;
+            border-radius: 1.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid var(--border-glass);
         }
 
         .debug-method {
-            padding: 0.25rem 0.75rem;
-            background: var(--primary-color);
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
             color: white;
-            border-radius: 1rem;
-            font-size: 0.75rem;
-            font-weight: 500;
+            border-radius: 1.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid var(--border-glass);
         }
 
-        .debug-method.tinyllama {
-            background: #10b981;
+        .debug-method.onnx-llm {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
         }
 
         .debug-method.rule-based {
-            background: #f59e0b;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
         }
 
         .debug-method.fallback {
-            background: #ef4444;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
         }
 
         .result-item {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            margin-bottom: 1rem;
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
             transition: var(--transition);
-            animation: slideIn 0.3s ease-out;
+            animation: slideIn 0.4s ease-out;
         }
 
         .result-item:hover {
+            transform: translateY(-4px);
             box-shadow: var(--shadow-lg);
-            transform: translateY(-2px);
         }
 
         @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(30px);
             }
             to {
                 opacity: 1;
@@ -550,16 +658,9 @@ server.get('/', (req, res) => {
             }
         }
 
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 0.75rem;
-        }
-
         .result-title {
-            margin: 0;
-            font-size: 1.125rem;
+            margin: 0 0 1rem 0;
+            font-size: 1.25rem;
             font-weight: 600;
         }
 
@@ -571,39 +672,40 @@ server.get('/', (req, res) => {
 
         .result-title a:hover {
             color: var(--primary-hover);
-            text-decoration: underline;
-        }
-
-        .result-source {
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: white;
         }
 
         .result-snippet {
             color: var(--text-secondary);
-            margin-bottom: 0.75rem;
-            line-height: 1.6;
+            margin-bottom: 1rem;
+            line-height: 1.7;
+            font-size: 0.95rem;
         }
 
         .result-url {
             font-size: 0.875rem;
             color: var(--success-color);
             word-break: break-all;
+            font-weight: 500;
         }
 
         /* Empty State */
         .empty-state {
             text-align: center;
-            padding: 4rem 2rem;
+            padding: 3rem;
+            color: rgba(255, 255, 255, 0.8);
         }
 
         .empty-icon {
             font-size: 4rem;
             margin-bottom: 1.5rem;
             opacity: 0.6;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .features-grid {
@@ -615,96 +717,102 @@ server.get('/', (req, res) => {
 
         .feature {
             display: flex;
+            flex-direction: column;
             align-items: center;
             gap: 0.75rem;
-            padding: 1rem;
-            background: var(--surface);
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
             border-radius: var(--radius);
-            font-size: 0.875rem;
-            font-weight: 500;
+            border: 1px solid var(--border-glass);
+            transition: var(--transition);
+        }
+
+        .feature:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.15);
         }
 
         .feature-icon {
-            font-size: 1.5rem;
+            font-size: 2rem;
+        }
+
+        .feature-text {
+            font-weight: 500;
+            text-align: center;
         }
 
         /* Error State */
         .error-state {
             text-align: center;
             padding: 3rem;
+            background: var(--surface-glass);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-glass);
+            margin-top: 2rem;
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .error-icon {
             font-size: 3rem;
             margin-bottom: 1rem;
+            color: var(--error-color);
         }
 
         .retry-button {
-            padding: 0.75rem 1.5rem;
-            background: var(--error-color);
+            padding: 1rem 2rem;
+            background: var(--primary-color);
             color: white;
             border: none;
             border-radius: var(--radius);
-            font-size: 0.875rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
-            margin-top: 1rem;
+            margin-top: 1.5rem;
         }
 
         .retry-button:hover {
-            background: #dc2626;
+            background: var(--primary-hover);
+            transform: translateY(-2px);
         }
 
-        /* Footer */
-        .footer {
-            margin-top: auto;
-            padding: 2rem 0;
-            border-top: 1px solid var(--border);
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                padding: 1.5rem;
+            }
+            
+            .visual-side {
+                order: -1;
+                min-height: 40vh;
+            }
+            
+            .visual-title {
+                font-size: 2rem;
+            }
         }
 
-        .footer-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .footer-section {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .footer-text {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
-
-        .footer-badge {
-            padding: 0.25rem 0.75rem;
-            background: var(--primary-color);
-            color: white;
-            border-radius: 1rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .footer-links {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .footer-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.875rem;
-            transition: var(--transition);
-        }
-
-        .footer-link:hover {
-            color: var(--primary-color);
+        @media (max-width: 768px) {
+            .search-card {
+                padding: 2rem;
+            }
+            
+            .search-box {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .search-button {
+                justify-content: center;
+            }
+            
+            .status-bar {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
         }
 
         /* Utility Classes */
@@ -712,169 +820,123 @@ server.get('/', (req, res) => {
             display: none !important;
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .container {
-                padding: 0.5rem;
-            }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
 
-            .logo {
-                font-size: 2rem;
-            }
-
-            .search-box {
-                flex-direction: column;
-            }
-
-            .search-button {
-                justify-content: center;
-            }
-
-            .status-bar {
-                justify-content: center;
-            }
-
-            .results-header {
-                flex-direction: column;
-                gap: 0.5rem;
-                align-items: flex-start;
-            }
-
-            .footer-content {
-                flex-direction: column;
-                text-align: center;
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Status Bar -->
-        <div class="status-bar">
-            <div class="status-item active" id="protected-status">
-                <span class="status-icon">🔒</span>
-                <span class="status-text">Protected</span>
+        <!-- Left Side - Search Interface -->
+        <div class="search-side">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-item" id="statusProtected">
+                    <span>Protected</span>
+                </div>
+                <div class="status-item" id="statusFast">
+                    <span>Fast</span>
+                </div>
+                <div class="status-item" id="statusSecure">
+                    <span>Secure</span>
+                </div>
+                <div class="status-item" id="statusAnonymized">
+                    <span>AI Ready</span>
+                </div>
+                <div class="status-item" id="statusBlessNetwork">
+                    <span>Bless Network</span>
+                </div>
+                <div class="status-item" id="statusWasmLLM">
+                    <span>WASM LLM v2.1</span>
+                </div>
+                <a href="/llm-status" class="status-item status-link" id="statusAILink">
+                    <span>AI Status</span>
+                </a>
             </div>
-            <div class="status-item active" id="ai-status">
-                <span class="status-icon">🧠</span>
-                <span class="status-text">AI Ready</span>
-            </div>
-            <div class="status-item active" id="speed-status">
-                <span class="status-icon">⚡</span>
-                <span class="status-text">Fast</span>
-            </div>
-            <div class="status-item active" id="engine-status">
-                <span class="status-icon">🔍</span>
-                <span class="status-text">Multi-Engine</span>
-            </div>
-            <div class="status-item active" id="secure-status">
-                <span class="status-icon">🛡️</span>
-                <span class="status-text">Secure</span>
+
+            <!-- Main Search Card -->
+            <div class="search-card">
+                <!-- Brand Section -->
+                <div class="brand-section">
+                    <h1 class="logo">Mirror Search</h1>
+                    <p class="tagline">Privacy-first search with AI anonymization</p>
+                    <div class="ai-badge">
+                        <span>ONNX.js Powered</span>
+                    </div>
+                </div>
+
+                <!-- Search Box -->
+                <div class="search-box-container">
+                    <div class="search-box">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="Search anything privately..."
+                            autocomplete="off"
+                        >
+                        <button id="searchButton" class="search-button">
+                            <span>Search</span>
+                        </button>
+                    </div>
+
+                    <!-- Privacy Options -->
+                    <div class="privacy-options">
+                        <label class="privacy-toggle">
+                            <input type="checkbox" id="anonymizationToggle" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">AI Query Anonymization</span>
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Main Search Interface -->
-        <div class="search-container">
-            <div class="logo-container">
-                <h1 class="logo">Mirror Search</h1>
-                <p class="tagline">Privacy-First AI Search Engine</p>
-                <div class="ai-badge">
-                    <span class="ai-icon">🧠</span>
-                    <span>Powered by TinyLlama 1.1B</span>
-                </div>
-            </div>
-
-            <div class="search-box-container">
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Search privately with AI anonymization..." autocomplete="off">
-                    <button id="searchButton" class="search-button">
-                        <span class="button-text">Search</span>
-                        <span class="button-icon">🔍</span>
-                    </button>
-                </div>
-                
-                <div class="privacy-options">
-                    <label class="privacy-toggle">
-                        <input type="checkbox" id="anonymizationToggle" checked>
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-label">AI Query Anonymization</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Loading State -->
-            <div id="loadingState" class="loading-state hidden">
-                <div class="loading-spinner"></div>
-                <div class="loading-text">
-                    <div class="loading-step active" id="step-anonymizing">🧠 Anonymizing query with AI...</div>
-                    <div class="loading-step" id="step-searching">🔍 Searching securely...</div>
-                    <div class="loading-step" id="step-processing">⚡ Processing results...</div>
-                </div>
-            </div>
-
-            <!-- Results Container -->
-            <div id="resultsContainer" class="results-container hidden">
-                <div class="results-header">
-                    <div class="results-info">
-                        <span id="resultsCount">0 results</span>
-                        <span id="searchTime">0ms</span>
-                        <span id="searchEngine">Unknown</span>
-                        <span id="debugMethod" class="debug-method">Method: Unknown</span>
-                    </div>
-                    <div class="privacy-info" id="privacyInfo">
-                        <span class="privacy-badge">🔒 Query Anonymized</span>
-                    </div>
-                </div>
-                <div id="resultsList" class="results-list"></div>
-            </div>
-
-            <!-- Empty State -->
-            <div id="emptyState" class="empty-state">
-                <div class="empty-icon">🔍</div>
-                <h3>Privacy-First Search</h3>
-                <div class="features-grid">
-                    <div class="feature">
-                        <span class="feature-icon">🧠</span>
-                        <span class="feature-text">AI Query Anonymization</span>
-                    </div>
-                    <div class="feature">
-                        <span class="feature-icon">🔒</span>
-                        <span class="feature-text">Zero Tracking</span>
-                    </div>
-                    <div class="feature">
-                        <span class="feature-icon">⚡</span>
-                        <span class="feature-text">Lightning Fast</span>
-                    </div>
-                    <div class="feature">
-                        <span class="feature-icon">🛡️</span>
-                        <span class="feature-text">Secure by Design</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Error State -->
-            <div id="errorState" class="error-state hidden">
-                <div class="error-icon">⚠️</div>
-                <h3>Search Error</h3>
-                <p id="errorMessage">Something went wrong. Please try again.</p>
-                <button id="retryButton" class="retry-button">Try Again</button>
+        <!-- Right Side - Visual Content -->
+        <div class="visual-side">
+            <div class="visual-content">
+                <h2 class="visual-title">Search Privately</h2>
+                <p class="visual-subtitle">Your queries, anonymized by AI</p>
             </div>
         </div>
 
-        <!-- Footer -->
-        <footer class="footer">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <span class="footer-text">Mirror Search + Bless Network</span>
-                    <span class="footer-badge">WASM LLM v2.1</span>
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state hidden">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">
+                <div class="loading-step active" id="step-anonymizing">Anonymizing query with AI...</div>
+                <div class="loading-step" id="step-searching">Searching securely...</div>
+                <div class="loading-step" id="step-processing">Processing results...</div>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div id="resultsContainer" class="results-container hidden">
+            <div class="results-header">
+                <div class="results-info">
+                    <span id="resultsCount">0 results</span>
+                    <span id="searchTime">0ms</span>
+                    <span id="searchEngine">Unknown</span>
+                    <span id="debugMethod" class="debug-method">Method: Unknown</span>
                 </div>
-                <div class="footer-links">
-                    <a href="#" class="footer-link">Privacy Policy</a>
-                    <a href="#" class="footer-link">About</a>
-                    <a href="/llm-status" class="footer-link">AI Status</a>
+                <div class="privacy-info" id="privacyInfo">
+                    <span class="privacy-badge">Query Anonymized</span>
                 </div>
             </div>
-        </footer>
+            <div id="resultsList" class="results-list"></div>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-state hidden">
+            <div class="error-icon">⚠️</div>
+            <h3>Search Error</h3>
+            <p id="errorMessage">Something went wrong. Please try again.</p>
+            <button id="retryButton" class="retry-button">Try Again</button>
+        </div>
     </div>
 
     <script>
@@ -886,7 +948,6 @@ server.get('/', (req, res) => {
                 this.loadingState = document.getElementById('loadingState');
                 this.resultsContainer = document.getElementById('resultsContainer');
                 this.resultsList = document.getElementById('resultsList');
-                this.emptyState = document.getElementById('emptyState');
                 this.errorState = document.getElementById('errorState');
                 this.retryButton = document.getElementById('retryButton');
                 
@@ -899,7 +960,6 @@ server.get('/', (req, res) => {
             init() {
                 this.bindEvents();
                 this.updateStatusBar();
-                this.showEmptyState();
                 
                 console.log('🔍 Mirror Search initialized');
                 console.log('🔒 Privacy-first search engine ready');
@@ -927,7 +987,6 @@ server.get('/', (req, res) => {
                     }
                     if (e.key === 'Escape') {
                         this.hideAllStates();
-                        this.showEmptyState();
                     }
                 });
             }
@@ -1114,16 +1173,10 @@ server.get('/', (req, res) => {
                 this.errorState.classList.remove('hidden');
             }
 
-            showEmptyState() {
-                this.hideAllStates();
-                this.emptyState.classList.remove('hidden');
-            }
-
             hideAllStates() {
                 this.loadingState.classList.add('hidden');
                 this.resultsContainer.classList.add('hidden');
                 this.errorState.classList.add('hidden');
-                this.emptyState.classList.add('hidden');
             }
 
             updateSearchButton(isLoading) {
@@ -1137,20 +1190,9 @@ server.get('/', (req, res) => {
             }
 
             updateStatusBar(status = null) {
-                const statusItems = {
-                    'protected-status': status?.protected !== false,
-                    'ai-status': true,
-                    'speed-status': status?.fast !== false,
-                    'engine-status': true,
-                    'secure-status': status?.secure !== false
-                };
-
-                Object.entries(statusItems).forEach(([id, isActive]) => {
-                    const element = document.getElementById(id);
-                    if (element) {
-                        element.classList.toggle('active', isActive);
-                    }
-                });
+                // Status bar artık active sınıfı kullanmıyor
+                // Tüm status itemlar her zaman aynı görünümde kalıyor
+                console.log('Status bar updated:', status);
             }
 
             escapeHtml(text) {
