@@ -270,9 +270,9 @@ server.get('/', (req, res) => {
             height: 100vh;
             background-image: url('assets/background.png');
             background-size: cover;
-            background-position: center;
+            background-position: center bottom -52px;
             z-index: -1;
-            opacity: 1;
+            opacity: 1;x
             transition: opacity 0.8s ease-in-out;
         }
 
@@ -304,9 +304,9 @@ server.get('/', (req, res) => {
         .container {
             max-width: 1400px;
             margin: 0 auto;
+            display: flex;
             padding: 2rem;
             min-height: 100vh;
-            display: flex;
             align-items: flex-start;
             justify-content: flex-start;
             padding-top: 4rem;
@@ -317,6 +317,7 @@ server.get('/', (req, res) => {
             display: flex;
             flex-direction: column;
             gap: 2rem;
+            margin-left: 4rem;
             max-width: 500px;
             width: 100%;
         }
@@ -827,19 +828,47 @@ server.get('/', (req, res) => {
             .container {
                 padding: 1.5rem;
                 padding-top: 3rem;
+                display: block;
             }
             
             .search-side {
                 max-width: 100%;
+                margin-left:0;
             }
+            .results-container {
+                margin-top: 3.3rem;
+            }
+            .results-header {
+                display: flex;
+                /* justify-content: space-between; */
+                align-items: flex-start;
+                padding: 1.5rem;
+                background: var(--surface-glass);
+                backdrop-filter: blur(20px);
+                border-radius: var(--radius-lg);
+                margin-bottom: 1.5rem;
+                font-size: 0.95rem;
+                color: rgba(255, 255, 255, 0.9);
+                border: 1px solid var(--border-glass);
+                flex-direction: column;
+            } 
+                .debug-method {
+                    margin-bottom: 1rem;
+                }
+                    body::before{
+                    background-position: center left;
+                    }
         }
 
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
                 padding-top: 2rem;
+                display: block;
             }
-            
+            body::before{
+                    background-position: center left;
+                    }
             .search-card {
                 padding: 1rem;
             }
@@ -860,11 +889,6 @@ server.get('/', (req, res) => {
             
             .logo-container {
                 gap: 0.5rem;
-            }
-            
-            .logo-icon {
-                width: 2rem;
-                height: 2rem;
             }
             
             .logo {
