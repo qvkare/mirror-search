@@ -9,6 +9,8 @@ permission = "public"
 nodes = 1
 permissions = [
   "https://api.duckduckgo.com/",
+  "https://api.brightdata.com/",
+  "https://mirror-search-proxy.onrender.com/",
   "https://www.google.com/",
   "https://www.bing.com/",
   "https://search.yahoo.com/",
@@ -29,19 +31,22 @@ command = "npm run build:release"
 [[deployments]]
 name = "blessnet"
 description = ""
-cid = "bafybeifcye5xbxmffk3y2jpbfrbz5awlvon2typsjykdyysws3xseuxrla"
-created = "2025-05-28T12:09:23.661Z"
+cid = "bafybeihtin3r7zxc2nofkbzg2xhqtyzruyytawpamwktnahauxg7y522jm"
+created = "2025-05-31T07:47:00.217Z"
 
   [deployments.runtime]
   url = "blessnet.tar.gz"
-  checksum = "c9c6438603e679f498b8ee4281b97619d56cc15541d0269b72fc54753637a242"
+  checksum = "4d207ca52859852ad0c1ec6e5c4b31c0b40d64b2e0e6464b8917410ae1dc62b6"
 
 [permissions]
 fs = [ "read", "write" ]
 network = [
-  "api.duckduckgo.com",
-  "fonts.googleapis.com",
-  "fonts.gstatic.com"
+  "https://api.duckduckgo.com/",
+  "https://api.brightdata.com/",
+  "https://mirror-search-proxy.onrender.com/",
+  "https://www.google.com/",
+  "https://fonts.googleapis.com/",
+  "https://fonts.gstatic.com/"
 ]
 
 [features]

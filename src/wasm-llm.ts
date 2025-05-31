@@ -42,6 +42,7 @@ export class WasmLLM {
   private anonymizationRules: Map<string, string>;
   private tinyLlamaModel: any = null;
   private tinyLlamaTokenizer: any = null;
+  private ruleBasedConfig: any;
 
   constructor(config: WasmLLMConfig = {}) {
     this.config = {
@@ -55,49 +56,34 @@ export class WasmLLM {
 
     // Initialize rule-based anonymization patterns
     this.anonymizationRules = new Map([
-      // Personal identifiers
-      ['istanbul', 'turkish city'],
-      ['ankara', 'capital city'],
-      ['izmir', 'coastal city'],
-      ['bursa', 'industrial city'],
+      // Location generalizations
+      ['city', 'location'],
+      ['town', 'location'],
+      ['near', 'location'],
+      ['nearby', 'area'],
       
-      // Personal preferences
-      ['en iyi', 'popular'],
-      ['favori', 'recommended'],
-      ['sevdiğim', 'preferred'],
-      ['beğendiğim', 'liked'],
+      // Food generalizations
+      ['restaurant', 'food_place'],
+      ['cuisine', 'food_type'],
+      ['meal', 'food'],
+      ['dish', 'food'],
+      ['dinner', 'meal'],
       
-      // Location-specific terms
-      ['yakın', 'nearby'],
-      ['burada', 'local'],
-      ['şehirde', 'in city'],
-      ['mahallede', 'in area'],
+      // Time generalizations
+      ['today', 'recent'],
+      ['tomorrow', 'soon'],
+      ['now', 'current'],
+      ['urgent', 'important'],
       
-      // Food and dining
-      ['kebap', 'grilled meat'],
-      ['döner', 'rotisserie'],
-      ['pide', 'flatbread'],
-      ['lahmacun', 'thin pizza'],
-      ['baklava', 'sweet pastry'],
-      
-      // Shopping and services
-      ['ucuz', 'affordable'],
-      ['kaliteli', 'quality'],
-      ['güvenilir', 'reliable'],
-      ['hızlı', 'fast'],
-      
-      // Time-sensitive
-      ['bugün', 'today'],
-      ['yarın', 'tomorrow'],
-      ['şimdi', 'now'],
-      ['acil', 'urgent'],
-      
-      // Personal context
-      ['evim', 'residence'],
-      ['işim', 'workplace'],
-      ['okulum', 'school'],
-      ['ailem', 'family']
+      // Personal generalizations
+      ['family', 'people'],
+      ['home', 'place'],
+      ['work', 'workplace'],
+      ['school', 'education_place']
     ]);
+
+    // Add rule-based anonymization pattern matchers
+    this.initPatterns();
   }
 
   async initialize(): Promise<boolean> {
@@ -292,22 +278,21 @@ Respond with only the anonymized query, nothing else.
       // Advanced pattern matching (simulating LLM intelligence)
       const advancedPatterns = [
         // Location patterns
-        { pattern: /\b(istanbul|ankara|izmir|bursa)\b/gi, replacement: 'major_city', semantic: 'location' },
-        { pattern: /\b(mahalle|semt|ilçe)\b/gi, replacement: 'district', semantic: 'location' },
+        { pattern: /\b(city|town|address)\b/gi, replacement: 'location', semantic: 'location' },
         
         // Personal patterns
-        { pattern: /\b(benim|beni|bana|bende)\b/gi, replacement: '', semantic: 'personal' },
-        { pattern: /\b(evim|işim|okulum)\b/gi, replacement: 'location', semantic: 'personal' },
+        { pattern: /\b(me|my|mine|I|personal)\b/gi, replacement: '', semantic: 'personal' },
+        { pattern: /\b(home|work|school)\b/gi, replacement: 'location', semantic: 'personal' },
         
         // Preference patterns
-        { pattern: /\b(en iyi|favori|sevdiğim)\b/gi, replacement: 'recommended', semantic: 'preference' },
-        { pattern: /\b(ucuz|pahalı|kaliteli)\b/gi, replacement: 'quality_level', semantic: 'preference' },
+        { pattern: /\b(best|favorite|preferred)\b/gi, replacement: 'recommended', semantic: 'preference' },
+        { pattern: /\b(cheap|expensive|quality)\b/gi, replacement: 'quality_level', semantic: 'preference' },
         
         // Food patterns
-        { pattern: /\b(kebap|döner|pide|lahmacun)\b/gi, replacement: 'local_food', semantic: 'food' },
+        { pattern: /\b(food|restaurant|cuisine|dish)\b/gi, replacement: 'local_food', semantic: 'food' },
         
         // Time patterns
-        { pattern: /\b(bugün|yarın|şimdi|acil)\b/gi, replacement: 'time_sensitive', semantic: 'temporal' }
+        { pattern: /\b(today|tomorrow|now|urgent)\b/gi, replacement: 'time_sensitive', semantic: 'temporal' }
       ];
       
       // Apply advanced patterns
@@ -381,9 +366,9 @@ Respond with only the anonymized query, nothing else.
   }
 
   private async simulateWasmLoad(): Promise<void> {
-    // Simulate WASM module loading time - Bless Network WASM uyumlu
+    // Simulate WASM module loading time - Compatible with Bless Network WASM
     return new Promise(resolve => {
-      // WASM environment'ta requestAnimationFrame yok, Promise.resolve() kullan
+      // Use Promise.resolve() instead of requestAnimationFrame in WASM environment
       Promise.resolve().then(() => {
         resolve();
       });
@@ -392,11 +377,11 @@ Respond with only the anonymized query, nothing else.
 
   private categorizePattern(pattern: string): string {
     const categories = {
-      location: ['istanbul', 'ankara', 'izmir', 'bursa', 'yakın', 'burada', 'şehirde', 'mahallede'],
-      preference: ['en iyi', 'favori', 'sevdiğim', 'beğendiğim', 'ucuz', 'kaliteli'],
-      food: ['kebap', 'döner', 'pide', 'lahmacun', 'baklava'],
-      time: ['bugün', 'yarın', 'şimdi', 'acil'],
-      personal: ['evim', 'işim', 'okulum', 'ailem']
+      location: ['city', 'town', 'near', 'nearby', 'local', 'district', 'area'],
+      preference: ['best', 'favorite', 'quality', 'cheap', 'affordable', 'premium'],
+      food: ['food', 'restaurant', 'meal', 'cuisine', 'dish'],
+      time: ['today', 'tomorrow', 'now', 'urgent', 'immediately'],
+      personal: ['home', 'work', 'school', 'family', 'house']
     };
 
     for (const [category, patterns] of Object.entries(categories)) {
@@ -412,7 +397,7 @@ Respond with only the anonymized query, nothing else.
     let result = query;
 
     // Remove personal pronouns
-    result = result.replace(/\b(benim|beni|bana|bende)\b/gi, '');
+    result = result.replace(/\b(my|mine|me|I|we|our)\b/gi, '');
     
     // Generalize numbers and quantities
     result = result.replace(/\b\d+\b/g, 'number');
@@ -433,7 +418,7 @@ Respond with only the anonymized query, nothing else.
   private basicAnonymization(query: string): string {
     // Very basic fallback anonymization
     let result = query
-      .replace(/\b(ben|benim|beni|bana)\b/gi, '')
+      .replace(/\b(I|me|my|mine)\b/gi, '')
       .replace(/\b\d+\b/g, 'number')
       .replace(/\s+/g, ' ')
       .trim();
@@ -473,6 +458,30 @@ Respond with only the anonymized query, nothing else.
   destroy(): void {
     this.isInitialized = false;
     this.anonymizationRules.clear();
+  }
+
+  // Add rule-based anonymization pattern matchers
+  private initPatterns() {
+    const tinyLlamaPatterns = [
+      // Map for common Turkish location terms to generic English equivalents
+      ['şehirde', 'in city'],
+      
+      // Other conversion pairs...
+    ];
+
+    // Keywords to detect in queries for basic anonymization
+    this.ruleBasedConfig = {
+      location: ['city', 'town', 'near', 'here', 'nearby', 'local', 'district'], // Removed Turkish location words
+      personal: ['I', 'me', 'my', 'mine', 'we', 'us', 'our'],
+      sensitive: ['medical', 'health', 'symptom', 'doctor', 'illness', 'disease'],
+      identifiers: ['id', 'ssn', 'passport', 'license', 'card', 'number', 'account'],
+      devices: ['phone', 'iphone', 'android', 'device', 'laptop', 'computer'],
+      finances: ['bank', 'credit', 'loan', 'finance', 'money', 'payment', 'salary'],
+      relationships: ['friend', 'partner', 'spouse', 'wife', 'husband', 'child'],
+      religious: ['church', 'mosque', 'temple', 'god', 'pray', 'faith', 'belief'],
+      political: ['vote', 'party', 'government', 'election', 'candidate', 'politics'],
+      timeSensitive: ['today', 'now', 'current', 'latest', 'update', 'recent', 'live']
+    };
   }
 }
 

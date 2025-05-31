@@ -154,6 +154,36 @@ npx blessnet preview
 npm test
 ```
 
+## Environment Configuration
+
+### Bright Data SERP API Setup
+Mirror Search now supports Bright Data SERP API as the primary search provider with DuckDuckGo as fallback.
+
+#### Required Environment Variables
+```bash
+# Get your API token from: https://brightdata.com/cp/setting/users
+BRIGHT_DATA_API_TOKEN=your_bright_data_api_token_here
+
+# Get your SERP zone from: https://brightdata.com/cp/zones
+# Default zone if not specified: serp_api1
+BRIGHT_DATA_ZONE=serp_api1
+```
+
+#### Setup Instructions
+1. **Get API Token**: Visit [Bright Data API Settings](https://brightdata.com/cp/setting/users)
+2. **Get Zone**: Visit [Bright Data Zones](https://brightdata.com/cp/zones) and select your SERP zone
+3. **Configure Environment**: Set environment variables before deployment
+4. **Deploy**: The system will automatically use Bright Data first, then fallback to DuckDuckGo
+
+#### Search Engine Priority
+```
+1. Bright Data SERP API (Primary)
+   ↓ (if fails)
+2. DuckDuckGo API (Fallback)
+   ↓ (if fails)
+3. Mock Results (Emergency)
+```
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.

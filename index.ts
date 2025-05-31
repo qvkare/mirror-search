@@ -49,6 +49,25 @@ server.get('/llm-status', async (req, res) => {
   }
 });
 
+// Proxy endpoint for Bright Data (to bypass WASM limitations)
+server.post('/proxy/brightdata', async (req, res) => {
+  try {
+    // This endpoint acts as a proxy for Bright Data API
+    // In production, this would be on a separate server
+    const proxyResponse = {
+      error: 'Bright Data proxy not configured',
+      message: 'To use Bright Data, deploy a proxy server with proper authentication',
+      alternative: 'Using DuckDuckGo as primary search engine'
+    };
+    res.send(JSON.stringify(proxyResponse));
+  } catch (error) {
+    res.send(JSON.stringify({ 
+      error: 'Proxy failed',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }));
+  }
+});
+
 // Search endpoint with WASM LLM integration
 server.post('/search', async (req, res) => {
   try {
@@ -80,12 +99,45 @@ server.post('/search', async (req, res) => {
       return;
     }
 
-    // Perform search with WASM LLM integration (no console logs)
-    const searchResult = await searchEngines.search(query, useAnonymization);
-    
-    // Clean JSON response - no console logs, no emojis
-    const cleanResponse = JSON.stringify(searchResult);
-    res.send(cleanResponse);
+    // Perform search with WASM LLM integration
+    try {
+      const searchResult = await searchEngines.search(query, useAnonymization);
+      
+      // Extra validation to ensure we have a valid JSON object
+      if (!searchResult || typeof searchResult !== 'object') {
+        throw new Error('Invalid search result object');
+      }
+      
+      // Ensure the result has required properties
+      if (!Array.isArray(searchResult.results)) {
+        searchResult.results = [];
+      }
+      
+      // Clean JSON response - no emojis, no HTML
+      const safeResponse = {
+        ...searchResult,
+        results: searchResult.results.map(result => ({
+          title: String(result.title || ''),
+          url: String(result.url || ''),
+          snippet: String(result.snippet || ''),
+          source: String(result.source || '')
+        })),
+        debug_info: {
+          engine: searchResult.engine,
+          errorInfo: searchResult.errorInfo || {},
+          query: query,
+          anonymized: searchResult.status?.anonymized || false
+        }
+      };
+      
+      res.send(JSON.stringify(safeResponse));
+    } catch (searchError) {
+      const errorResponse = { 
+        error: 'Search engine error',
+        message: searchError instanceof Error ? searchError.message : 'Search processing failed'
+      };
+      res.send(JSON.stringify(errorResponse));
+    }
     
   } catch (error) {
     const errorResponse = { 
@@ -128,7 +180,7 @@ server.get('/tinyllama-status', (req, res) => {
         </div>
         
         <h2>📊 Real-time Test</h2>
-        <input type="text" id="testQuery" placeholder="Test query (e.g., istanbul'da en iyi kebap)" style="width: 70%; padding: 10px; margin-right: 10px;">
+        <input type="text" id="testQuery" placeholder="Test query (e.g., best restaurants in Boston)" style="width: 70%; padding: 10px; margin-right: 10px;">
         <button onclick="testAnonymization()" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">Test</button>
         
         <div id="test-results" style="margin-top: 20px;"></div>
@@ -1007,9 +1059,6 @@ server.get('/', (req, res) => {
             init() {
                 this.bindEvents();
                 this.updateStatusBar();
-                
-                console.log('🔍 Mirror Search initialized');
-                console.log('🔒 Privacy-first search engine ready');
             }
 
             bindEvents() {
@@ -1054,10 +1103,8 @@ server.get('/', (req, res) => {
                 this.currentQuery = query;
                 this.isSearching = true;
                 
-                // Arama başladığında ikinci arkaplanı aktif et
+                // Activate second background when search starts
                 document.body.classList.add('search-active');
-                
-                console.log('🔍 Searching for: "' + query + '"');
                 
                 this.showLoadingState();
                 this.updateSearchButton(true);
@@ -1091,7 +1138,6 @@ server.get('/', (req, res) => {
                     this.displayResults(data);
                     
                 } catch (error) {
-                    console.error('❌ Search error:', error);
                     this.showError(error.message || 'Search failed. Please try again.');
                 } finally {
                     this.isSearching = false;
@@ -1149,14 +1195,6 @@ server.get('/', (req, res) => {
                     const method = data.debug.anonymizationMethod;
                     debugMethodElement.textContent = 'Method: ' + method;
                     debugMethodElement.className = 'debug-method ' + method;
-                    
-                    // Console'da detaylı debug bilgisi
-                    console.log('🔍 Anonymization Debug:', {
-                        method: method,
-                        original: data.debug.originalQuery,
-                        anonymized: data.debug.anonymizedQuery,
-                        confidence: data.debug.confidence
-                    });
                 } else {
                     debugMethodElement.textContent = 'Method: Unknown';
                     debugMethodElement.className = 'debug-method';
@@ -1243,7 +1281,6 @@ server.get('/', (req, res) => {
             updateStatusBar(status = null) {
                 // Status bar artık active sınıfı kullanmıyor
                 // Tüm status itemlar her zaman aynı görünümde kalıyor
-                console.log('Status bar updated:', status);
             }
 
             escapeHtml(text) {
@@ -1255,12 +1292,6 @@ server.get('/', (req, res) => {
 
         document.addEventListener('DOMContentLoaded', () => {
             new MirrorSearch();
-            
-            console.log('%c🔍 Mirror Search v2.1 - Privacy-First AI Search Engine', 'color: #3b82f6; font-size: 16px; font-weight: bold;');
-            console.log('%c🔒 No tracking • No logs • No data collection', 'color: #10b981; font-size: 12px;');
-            console.log('%c⚡ Multi-engine search with WASM LLM anonymization', 'color: #f59e0b; font-size: 12px;');
-            console.log('%c🛡️ Advanced privacy protection and secure by design', 'color: #ef4444; font-size: 12px;');
-            console.log('%c🌐 Powered by Bless Network', 'color: #8b5cf6; font-size: 12px;');
         });
     </script>
 </body>
