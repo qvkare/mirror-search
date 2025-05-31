@@ -31,28 +31,21 @@ command = "npm run build:release"
 [[deployments]]
 name = "blessnet"
 description = ""
-cid = "bafybeihtin3r7zxc2nofkbzg2xhqtyzruyytawpamwktnahauxg7y522jm"
-created = "2025-05-31T07:47:00.217Z"
+cid = "bafybeibyuteiptt4kiz5fo4bjlh3pjxxaq66yfmommjt67emss5ichp5dq"
+created = "2025-05-31T19:47:24.981Z"
 
   [deployments.runtime]
   url = "blessnet.tar.gz"
-  checksum = "4d207ca52859852ad0c1ec6e5c4b31c0b40d64b2e0e6464b8917410ae1dc62b6"
+  checksum = "13fe1eed769bfaf4b54c0ae233a9a70fabf2d5b9eaa95fcd7a21e817ef43c6ce"
 
 [permissions]
 fs = [ "read", "write" ]
-network = [
-  "https://api.duckduckgo.com/",
-  "https://api.brightdata.com/",
-  "https://mirror-search-proxy.onrender.com/",
-  "https://www.google.com/",
-  "https://fonts.googleapis.com/",
-  "https://fonts.gstatic.com/"
-]
 
 [features]
 wasm = true
 llm = true
 privacy = true
+fetch = true
 
 [metadata]
 title = "Mirror Search - Privacy-First AI Search Engine"

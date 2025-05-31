@@ -46,7 +46,7 @@ export interface SearchEngineConfig {
 export class SearchEngines {
   private config: SearchEngineConfig;
   private readonly SEARCH_API_URL = 'https://api.duckduckgo.com/';
-  private readonly BRIGHT_DATA_PROXY_URL = 'https://mirror-search-proxy.onrender.com/api/brightdata'; // Render.com proxy endpoint
+  private readonly BRIGHT_DATA_PROXY_URL = 'https://mirror-search-proxy.onrender.com/api/brightdataget'; // UPDATED for GET
   private readonly BRIGHT_DATA_API_URL = 'https://api.brightdata.com/request';
 
   constructor(config: Partial<SearchEngineConfig> = {}) {
@@ -141,50 +141,36 @@ export class SearchEngines {
     try {
       const cleanQuery = query.trim();
       
-      // Create an AbortController with longer timeout for Bright Data
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-        throw new Error('Bright Data proxy request timed out after 15 seconds');
-      }, 15000); // 15 second timeout
-      
       try {
-        // Use the Render.com hosted proxy server
-        const response = await fetch(this.BRIGHT_DATA_PROXY_URL, {
-          method: 'POST',
+        // Manually construct query string as URLSearchParams is not available
+        // Ensure cleanQuery is properly URI encoded.
+        const encodedQuery = encodeURIComponent(cleanQuery);
+        const fullProxyUrl = `${this.BRIGHT_DATA_PROXY_URL}?query=${encodedQuery}`;
+        
+        // REMOVE OR COMMENT OUT THE LINE BELOW as it might interfere with JSON response to UI
+        // console.log(`[search-engines.ts] Sending to Bright Data proxy (GET, manual URL): URL=${fullProxyUrl}`);
+
+        const response = await fetch(fullProxyUrl, {
+          method: 'GET', // Changed to GET
           headers: {
-            'Content-Type': 'application/json',
+            // Content-Type and other body-related headers are not needed for GET
             'User-Agent': this.config.userAgent,
             'Accept': 'application/json',
-            'X-Request-Debug': 'true'
-          },
-          body: JSON.stringify({
-            query: cleanQuery,
-            num: this.config.maxResults,
-            hl: 'en',
-            gl: 'us',
-            debug: true
-          }),
-          signal: controller.signal
+            'X-Request-Debug': 'true' // This can be kept or removed for GET
+          }
+          // body is not sent with GET requests
         });
-        
-        // Clear the timeout
-        clearTimeout(timeoutId);
         
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(`Proxy HTTP error: ${response.status} - ${errorText.substring(0, 200)}`);
         }
         
-        // First try to parse as text to check for any unwanted output
         const responseText = await response.text();
-        
-        // Try to parse the response as JSON
         let data;
         try {
           data = JSON.parse(responseText);
         } catch (jsonError) {
-          // Try to extract valid JSON part if mixed with other content
           try {
             const jsonStartIndex = responseText.indexOf('{');
             const jsonEndIndex = responseText.lastIndexOf('}') + 1;
@@ -192,19 +178,19 @@ export class SearchEngines {
               const jsonPart = responseText.substring(jsonStartIndex, jsonEndIndex);
               data = JSON.parse(jsonPart);
             } else {
-              throw new Error(`No valid JSON found in response`);
+              throw new Error(`No valid JSON found in response (query sent: '${cleanQuery}')`);
             }
           } catch (extractError) {
-            throw new Error(`JSON parse error: ${jsonError.message}. Response starts with: ${responseText.substring(0, 100)}`);
+            throw new Error(`JSON parse error (query sent: '${cleanQuery}'): ${jsonError.message}. Response starts with: ${responseText.substring(0, 100)}`);
           }
         }
         
         if (!data.success || !data.results || !Array.isArray(data.results)) {
-          throw new Error(`Invalid response format from proxy: ${JSON.stringify(data).substring(0, 200)}`);
+          throw new Error(`Invalid response format from proxy (query sent: '${cleanQuery}'). Proxy said: ${JSON.stringify(data).substring(0, 250)}`);
         }
         
         if (data.results.length === 0) {
-          throw new Error('No search results returned from proxy');
+          throw new Error(`No search results returned from proxy (query sent: '${cleanQuery}')`);
         }
         
         return data.results.map((result: any) => ({
@@ -215,29 +201,19 @@ export class SearchEngines {
         }));
         
       } catch (fetchError) {
-        // Make sure to clear the timeout in case of error
-        clearTimeout(timeoutId);
         throw fetchError;
       }
       
     } catch (error) {
-      // Add more context to the error
       const errorMessage = error instanceof Error ? 
         `Bright Data proxy error: ${error.message}` : 
         `Unknown Bright Data proxy error: ${String(error)}`;
       
-      // Test direct proxy health check to provide more context
+      // Health check without AbortController
       try {
-        // Use AbortController with timeout for health check
-        const healthController = new AbortController();
-        const healthTimeoutId = setTimeout(() => healthController.abort(), 5000);
-        
         const healthResponse = await fetch(`${this.BRIGHT_DATA_PROXY_URL}/health`, { 
-          method: 'GET',
-          signal: healthController.signal
+          method: 'GET'
         });
-        
-        clearTimeout(healthTimeoutId);
         
         if (!healthResponse.ok) {
           throw new Error(`Proxy health check failed with status ${healthResponse.status}`);

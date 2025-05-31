@@ -784,3 +784,5 @@
         0: 0xf05db - <unknown>!<wasm function 1281>
 [2025-05-29T09:16:00Z ERROR blockless] error: error while executing at wasm backtrace:
         0: 0xf05db - <unknown>!<wasm function 1281>
+[2025-05-31T17:09:33Z ERROR blockless] error: error while executing at wasm backtrace:
+        0: 0xf05db - <unknown>!<wasm function 1281>

@@ -1,12 +1,10 @@
-
-
 <div align="center">
   <img src="assets/logo.png" alt="Mirror Search Logo" width="800" height="500">
   <h1>Mirror Search - Privacy-First AI Search Engine</h1>
   <p><em>A decentralized privacy-first search engine built on <strong>Bless Network</strong> infrastructure with ONNX.js AI anonymization</em></p>
 </div>
 
-#### 🔗 **Live**: [https://coffee-cockroach-rachelle-6byahvr4.bls.dev](https://coffee-cockroach-rachelle-6byahvr4.bls.dev)
+#### 🔗 **Live**: [https://coffee-cockroach-rachelle-6byahvr4.bls.dev](https://coffee-cockroach-rachelle-6byahvr4.bls.dev) (Verify if this link is still active)
 ---
 
 ## **Key Features**
@@ -47,14 +45,23 @@
 ### Phase 1: ONNX.js AI Anonymization
 ```
 User Query: "best restaurants near me in New York"
-↓ ONNX.js Processing ↓
+↓ ONNX.js Processing (within WASM on Bless Network) ↓
 Anonymized: "recommended restaurants nearby New York"
 Method: onnx-llm (85% confidence)
 ```
 
-### Phase 2: Secure Search
+### Phase 2: Secure Search via Proxy
 ```
-Anonymized Query → DuckDuckGo API → Filtered Results
+Anonymized Query (from WASM)
+     ↓
+Mirror Search WASM makes a GET request to Bright Data Proxy Server
+     ↓
+Bright Data Proxy Server (e.g., on Render.com)
+  (Receives GET, internally makes POST to Bright Data SERP API)
+     ↓
+Bright Data SERP API
+     ↓
+Filtered Results (returned to WASM, then to user)
 ```
 
 ## Real Test Results
@@ -98,6 +105,7 @@ npx blessnet deploy
 ## API Documentation
 
 ### Search Endpoint
+The Mirror Search application itself exposes a POST endpoint for search queries.
 ```bash
 POST /search
 Content-Type: application/json
@@ -132,10 +140,13 @@ Content-Type: application/json
 ## Technical Architecture
 
 ### Bless Network Platform
-- **Runtime**: WebAssembly (WASM) execution environment
-- **SDK**: @blockless/sdk-ts for TypeScript integration
-- **Deployment**: Distributed nodes with automatic load balancing
-- **Security**: Sandboxed execution with network permission controls
+- **Runtime**: WebAssembly (WASM) execution environment.
+- **SDK**: `@blockless/sdk-ts` for TypeScript integration.
+- **Deployment**: Distributed nodes with automatic load balancing.
+- **Security**: Sandboxed execution with network permission controls.
+- **Configuration (`bls.toml`)**: Crucial for defining permissions and features.
+    - **Network Permissions**: Must allow outgoing requests to the Bright Data Proxy URL (e.g., `https://mirror-search-proxy.onrender.com/`). This is typically configured under `[deployment.permissions]`.
+    - **Fetch Feature**: The `fetch = true` flag must be enabled under `[features]` to allow network requests from WASM.
 
 ### ONNX.js AI Stack
 - **Runtime**: onnxruntime-web v1.17.0
@@ -156,10 +167,14 @@ npm test
 
 ## Environment Configuration
 
-### Bright Data SERP API Setup
-Mirror Search now supports Bright Data SERP API as the primary search provider with DuckDuckGo as fallback.
+### Bright Data SERP API Integration via Proxy
 
-#### Required Environment Variables
+Mirror Search uses a **proxy server** (e.g., deployed on Render.com at `https://mirror-search-proxy.onrender.com`) to interact with the Bright Data SERP API. This an intermediary step to manage API keys securely and to work around current limitations in the Bless Network's WASM fetch capabilities regarding `POST` request bodies and headers.
+
+The WASM module (`mirror-search`) makes a `GET` request to the proxy's `/api/brightdataget` endpoint. The proxy then makes the actual `POST` request to Bright Data.
+
+#### Required Environment Variables (for the Proxy Server)
+These variables need to be configured on your **proxy server's environment (e.g., Render.com)**, not directly in the Mirror Search WASM deployment.
 ```bash
 # Get your API token from: https://brightdata.com/cp/setting/users
 BRIGHT_DATA_API_TOKEN=your_bright_data_api_token_here
@@ -170,19 +185,48 @@ BRIGHT_DATA_ZONE=serp_api1
 ```
 
 #### Setup Instructions
-1. **Get API Token**: Visit [Bright Data API Settings](https://brightdata.com/cp/setting/users)
-2. **Get Zone**: Visit [Bright Data Zones](https://brightdata.com/cp/zones) and select your SERP zone
-3. **Configure Environment**: Set environment variables before deployment
-4. **Deploy**: The system will automatically use Bright Data first, then fallback to DuckDuckGo
+1.  **Deploy Proxy Server**: Deploy the `brightdata-proxy` (located in this repository) to a hosting service like Render.com.
+2.  **Configure Proxy Environment Variables**:
+    *   Get your Bright Data API Token: [Bright Data API Settings](https://brightdata.com/cp/setting/users)
+    *   Get your Bright Data Zone: [Bright Data Zones](https://brightdata.com/cp/zones)
+    *   Set `BRIGHT_DATA_API_TOKEN` and `BRIGHT_DATA_ZONE` in your proxy server's environment.
+3.  **Update Proxy URL in Mirror Search**:
+    *   In `mirror-search/src/search-engines.ts`, ensure `BRIGHT_DATA_PROXY_URL` points to your deployed proxy's `/api/brightdataget` endpoint.
+    ```typescript
+    private readonly BRIGHT_DATA_PROXY_URL = 'YOUR_PROXY_URL_HERE/api/brightdataget';
+    ```
+4.  **Configure `bls.toml` in Mirror Search**:
+    *   Ensure `mirror-search/bls.toml` allows network requests to your proxy URL and has `fetch = true` enabled under features.
+    ```toml
+    # inside mirror-search/bls.toml
+    # ... other configurations ...
+
+    [deployment]
+    # ...
+    permissions = [
+      # ... other permissions ...
+      "https://YOUR_PROXY_URL_HERE/" # Allow access to your proxy
+    ]
+
+    [features]
+    wasm = true
+    fetch = true # Enable fetch API
+    # ... other features ...
+    ```
+5.  **Deploy Mirror Search**: Deploy the Mirror Search WASM application to Bless Network. The system will use the proxy for Bright Data, then fallback to DuckDuckGo.
 
 #### Search Engine Priority
 ```
-1. Bright Data SERP API (Primary)
+1. Bright Data SERP API (via Proxy Server using GET from WASM)
    ↓ (if fails)
 2. DuckDuckGo API (Fallback)
    ↓ (if fails)
 3. Mock Results (Emergency)
 ```
+
+## Known Issues & Limitations (Bless Network WASM Environment)
+-   **`fetch` API for `POST` Requests**: The current `@blockless/sdk-ts` fetch implementation might not correctly send `Content-Type` headers or request bodies for `POST` requests from WASM. This necessitated the GET request workaround to the proxy.
+-   **Missing Browser Globals**: Standard browser globals like `AbortController` and `URLSearchParams` are not available in the Bless Network WASM environment and need to be worked around (e.g., manual URL construction).
 
 ## License
 

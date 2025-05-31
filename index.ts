@@ -994,10 +994,10 @@ server.get('/', (req, res) => {
                     <!-- Privacy Options -->
                     <div class="privacy-options">
                         <label class="privacy-toggle">
-                            <input type="checkbox" id="anonymizationToggle" checked>
+                            <input type="checkbox" id="anonymizationToggle">
                             <span class="toggle-slider"></span>
-                            <span class="toggle-label">AI Query Anonymization</span>
                         </label>
+                        <span class="toggle-label">AI Query Anonymization</span>
                     </div>
                 </div>
             </div>

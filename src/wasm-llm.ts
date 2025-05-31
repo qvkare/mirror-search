@@ -28,6 +28,13 @@ export interface AnonymizationResult {
   method: 'tinyllama' | 'rule-based' | 'fallback' | 'onnx-llm';
 }
 
+interface AnonymizationSubResult {
+  originalQuery: string;
+  anonymizedQuery: string;
+  confidence: number;
+  preservedSemantics: string[];
+}
+
 export interface WasmLLMConfig {
   modelPath?: string;
   maxTokens?: number;
@@ -216,7 +223,7 @@ export class WasmLLM {
   }
 
   // TinyLlama-based anonymization
-  private async tinyLlamaAnonymize(query: string): Promise<Partial<AnonymizationResult> | null> {
+  private async tinyLlamaAnonymize(query: string): Promise<AnonymizationSubResult | null> {
     try {
       if (!this.tinyLlamaModel) return null;
 
@@ -264,7 +271,7 @@ Respond with only the anonymized query, nothing else.
   }
 
   // ONNX-based anonymization (simulated for now)
-  private async onnxAnonymize(query: string): Promise<Partial<AnonymizationResult> | null> {
+  private async onnxAnonymize(query: string): Promise<AnonymizationSubResult | null> {
     try {
       if (!this.tinyLlamaModel || !this.tinyLlamaModel.loaded) return null;
 
