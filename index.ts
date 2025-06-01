@@ -305,12 +305,11 @@ server.get('/', (req, res) => {
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-image: url('assets/background.png');
             color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
-            overflow-x: hidden;
-            transition: all 0.5s ease-in-out;
+            overflow-x: hidden; 
         }
 
         body::before {
@@ -325,7 +324,6 @@ server.get('/', (req, res) => {
             background-position: center bottom -52px;
             z-index: -1;
             opacity: 1;x
-            transition: opacity 0.8s ease-in-out;
         }
 
         body::after {
@@ -335,9 +333,9 @@ server.get('/', (req, res) => {
             left: 0;
             width: 100%;
             height: 100vh;
-            background-image: url('assets/background2.png');
+            background-image: url('assets/background.png');
             background-size: cover;
-            background-position: center;
+            background-position: center bottom -52px;
             z-index: -2;
             opacity: 0;
             transition: opacity 0.8s ease-in-out;
@@ -633,7 +631,7 @@ server.get('/', (req, res) => {
             backdrop-filter: blur(20px);
             border-radius: var(--radius-lg);
             border: 1px solid var(--border-glass);
-            margin-top: 2rem;
+            margin: 5rem 0rem 0rem 15rem;
         }
 
         .loading-spinner {
@@ -848,7 +846,7 @@ server.get('/', (req, res) => {
             backdrop-filter: blur(20px);
             border-radius: var(--radius-lg);
             border: 1px solid var(--border-glass);
-            margin-top: 2rem;
+            margin-top: 5rem 0rem 0rem 15rem;
             color: rgba(255, 255, 255, 0.9);
         }
 
@@ -1020,10 +1018,7 @@ server.get('/', (req, res) => {
                     <span id="resultsCount">0 results</span>
                     <span id="searchTime">0ms</span>
                     <span id="searchEngine">Unknown</span>
-                    <span id="debugMethod" class="debug-method">Method: Unknown</span>
-                </div>
-                <div class="privacy-info" id="privacyInfo">
-                    <span class="privacy-badge">Query Anonymized</span>
+                    <span id="debugMethod" class="debug-method hidden"></span>
                 </div>
             </div>
             <div id="resultsList" class="results-list"></div>
@@ -1189,25 +1184,18 @@ server.get('/', (req, res) => {
                 document.getElementById('searchTime').textContent = data.totalTime + 'ms';
                 document.getElementById('searchEngine').textContent = data.engine;
                 
-                // Debug method gösterimi
                 const debugMethodElement = document.getElementById('debugMethod');
-                if (data.debug && data.debug.anonymizationMethod) {
-                    const method = data.debug.anonymizationMethod;
-                    debugMethodElement.textContent = 'Method: ' + method;
-                    debugMethodElement.className = 'debug-method ' + method;
-                } else {
-                    debugMethodElement.textContent = 'Method: Unknown';
-                    debugMethodElement.className = 'debug-method';
+                
+                debugMethodElement.textContent = '';
+                debugMethodElement.className = 'debug-method'; // Temel sınıfı ayarla
+                debugMethodElement.classList.add('hidden');
+
+                if (data.debug && data.debug.anonymizationMethod === 'onnx-llm') {
+                    debugMethodElement.textContent = 'Method: ' + data.debug.anonymizationMethod;
+                    debugMethodElement.classList.add('onnx-llm'); // Yönteme özel sınıfı ekle
+                    debugMethodElement.classList.remove('hidden'); // Görünür yap
                 }
                 
-                const privacyInfo = document.getElementById('privacyInfo');
-                if (data.status.anonymized) {
-                    const method = data.debug?.anonymizationMethod || 'unknown';
-                    privacyInfo.innerHTML = '<span class="privacy-badge">🔒 ' + method.toUpperCase() + ' Anonymized</span>';
-                } else {
-                    privacyInfo.innerHTML = '<span class="privacy-badge">🔍 Direct Search</span>';
-                }
-
                 this.resultsList.innerHTML = '';
                 
                 data.results.forEach((result, index) => {
@@ -1232,9 +1220,6 @@ server.get('/', (req, res) => {
                             this.escapeHtml(result.title) +
                         '</a>' +
                     '</h3>' +
-                    '<span class="result-source" style="background-color: ' + sourceColor + '">' +
-                        result.source +
-                    '</span>' +
                 '</div>' +
                 '<p class="result-snippet">' + this.escapeHtml(result.snippet) + '</p>' +
                 '<div class="result-url">' + this.escapeHtml(result.url) + '</div>';

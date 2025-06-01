@@ -1,10 +1,10 @@
 <div align="center">
-  <img src="assets/logo.png" alt="Mirror Search Logo" width="800" height="500">
+  <img src="assets/mirror-search.gif" alt="Mirror Search Logo" width="800" height="500">
   <h1>Mirror Search - Privacy-First AI Search Engine</h1>
   <p><em>A decentralized privacy-first search engine built on <strong>Bless Network</strong> infrastructure with ONNX.js AI anonymization</em></p>
 </div>
 
-#### 🔗 **Live**: [https://coffee-cockroach-rachelle-6byahvr4.bls.dev](https://coffee-cockroach-rachelle-6byahvr4.bls.dev) (Verify if this link is still active)
+#### 🔗 **Live**: [https://coffee-cockroach-rachelle-6byahvr4.bls.dev](https://coffee-cockroach-rachelle-6byahvr4.bls.dev)
 ---
 
 ## **Key Features**
@@ -230,7 +230,7 @@ BRIGHT_DATA_ZONE=serp_api1
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License
 
 ## Links
 
