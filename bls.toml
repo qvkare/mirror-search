@@ -1,12 +1,12 @@
 name = "mirror-search"
-version = "2.1.0"
+version = "2.1.1"
 type = "html"
 production_host = "coffee-cockroach-rachelle-6byahvr4.bls.dev"
 environment = "production"
 
 [deployment]
 permission = "public"
-nodes = 1
+nodes = -1
 permissions = [
   "https://api.duckduckgo.com/",
   "https://api.brightdata.com/",
@@ -31,12 +31,12 @@ command = "npm run build:release"
 [[deployments]]
 name = "blessnet"
 description = ""
-cid = "bafybeifppmqjrwb5wk5iudluwrcbdps5fwjpwd5jqwxsqwejyuhhjka7ti"
-created = "2025-06-01T05:28:13.027Z"
+cid = "bafybeies5izavxxxwkdh3yvwv4vn4chy2dn4dstczi5bgetnk3ceh24mlu"
+created = "2025-06-01T09:30:47.477Z"
 
   [deployments.runtime]
   url = "blessnet.tar.gz"
-  checksum = "f0c326a0f0918463c7b16c9cde45e41db77314359a28c73801094f82278880e5"
+  checksum = "b3215f9c91d74107901c090d8290fe1f91c071ba4ff6af9d5247006f8b704026"
 
 [permissions]
 fs = [ "read", "write" ]
