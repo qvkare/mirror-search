@@ -7,6 +7,9 @@ For questions about specific versions or upgrade paths, please:
 
 ## [2.1.1-LiveSearch] 
 
+### Improved
+- **Ad-Free Search Results**: Enhanced Cheerio parsing logic in the https://github.com/qvkare/mirror-search `brightdata-proxy` to more effectively filter out ads and non-organic content from Bright Data SERP, providing cleaner search results.
+
 ### Fixed
 - **WASM LLM Type Errors**: Resolved TypeScript type incompatibilities in `wasm-llm.ts` for `AnonymizationResult`.
 - **`AbortController` Removal**: Removed `AbortController` usage from `search-engines.ts` due to unavailability in the Bless Network WASM environment, resolving a critical runtime error with the Bright Data proxy.

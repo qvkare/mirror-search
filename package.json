@@ -1,6 +1,6 @@
 {
 	"name": "mirror-search",
-	"version": "2.1.0-onnx-llm",
+	"version": "2.1.1",
 	"description": "Privacy-First AI Search Engine with ONNX LLM",
 	"main": "index.ts",
 	"scripts": {
